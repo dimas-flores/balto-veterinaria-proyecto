@@ -37,6 +37,8 @@ La primera instalación puede tardar varios minutos. Puedes seguirla con `docker
 | [Administración de Drupal](http://localhost:8080/user/login) | El usuario inicial es `admin_balto` y su contraseña está en `DRUPAL_ADMIN_PASSWORD` en tu `.env`. |
 | [Editor de n8n](http://localhost:5678) | Crea la cuenta propietaria al entrar por primera vez. Compose importa y publica el chatbot al arrancar. |
 
+Para que otros equipos de la red la abran por IP, ejecuta `python3 scripts/configure-local-ip.py` y luego `docker compose up -d --force-recreate drupal n8n` ([detalles](docs/docker-local.md#abrir-la-demo-por-ip-red-del-aula)).
+
 Puedes detener la demo con `docker compose stop` y volver a levantarla con `docker compose up -d`. Los volúmenes conservan los datos y las cuentas. Si cambias código PHP, reconstruye la imagen con `docker compose up -d --build`.
 
 [Guía completa de instalación y solución de problemas](docs/replicar-balto.md)

@@ -7,9 +7,9 @@ services:
       DRUPAL_REVERSE_PROXY: '1'
 
   n8n:
-    # El editor solo se accede mediante un túnel SSH.
+    # El valor predeterminado permite acceder al editor mediante un túnel SSH.
     ports: !override
-      - '127.0.0.1:5678:5678'
+      - '${N8N_EDITOR_BIND_ADDRESS:-127.0.0.1}:5678:5678'
     environment:
       N8N_PROXY_HOPS: '1'
 

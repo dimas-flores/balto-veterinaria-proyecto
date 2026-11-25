@@ -1,0 +1,300 @@
+{
+  "id": "baltoDatosChat",
+  "name": "BALTO · Consultar Drupal y responder",
+  "active": false,
+  "nodes": [
+    {
+      "id": "Recibir consulta",
+      "name": "Recibir consulta",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "Ver horarios y contacto",
+      "name": "Ver horarios y contacto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "url": "http://drupal/api/vet/schedule",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 8000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "baltoDrupalApi",
+          "name": "BALTO API interna"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "¿Pidió un tipo de producto?",
+      "name": "¿Pidió un tipo de producto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "¿Pidió un tipo de producto?",
+              "leftValue": "={{ $(\"Recibir consulta\").first().json.intent === \"category\" }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "Leer categorías",
+      "name": "Leer categorías",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        550,
+        100
+      ],
+      "parameters": {
+        "url": "http://drupal/api/vet/categories",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 8000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "baltoDrupalApi",
+          "name": "BALTO API interna"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "Elegir qué buscar",
+      "name": "Elegir qué buscar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const context = $('Recibir consulta').first().json;\nconst normalize = s => s.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\nlet path = '/api/vet/schedule';\nif (['services', 'overview'].includes(context.intent)) path = '/api/vet/services';\nelse if (context.intent === 'categories') path = '/api/vet/categories';\nelse if (context.intent === 'category') {\n  const data = $input.first().json.data;\n  const categories = Array.isArray(data) ? data : [];\n  // El identificador se obtiene de Drupal, nunca se presupone el ID de taxonomía.\n  const category = categories.find(c => normalize(c.name).split(/[^a-z]+/).filter(w => w.length > 4).some(w => (context.shoppingCategory || context.text).includes(w) || (context.shoppingCategory || context.text).includes(w.replace(/s$/, ''))));\n  const filters = [];\n  if (category) filters.push('category=' + encodeURIComponent(category.id));\n  const search = [context.age, context.size].filter(Boolean).join(' ');\n  if (search) filters.push('q=' + encodeURIComponent(search));\n  if (context.species) filters.push('species=' + encodeURIComponent(context.species));\n  path = '/api/vet/products' + (filters.length ? '?' + filters.join('&') : '');\n}\nelse if (context.intent === 'product') path = '/api/vet/products?q=' + encodeURIComponent(context.q);\nconst reuseProduct = Boolean(context.initialProduct);\nreturn [{ json: { ...context, path, reuseProduct } }];\n"
+      }
+    },
+    {
+      "id": "¿Faltan datos?",
+      "name": "¿Faltan datos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "¿Faltan datos?",
+              "leftValue": "={{ $json.path !== \"/api/vet/schedule\" && !$json.reuseProduct }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "Buscar en la tienda",
+      "name": "Buscar en la tienda",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        990,
+        100
+      ],
+      "parameters": {
+        "url": "={{ 'http://drupal' + $json.path }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 8000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "baltoDrupalApi",
+          "name": "BALTO API interna"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "Asistente BALTO · Preparar respuesta",
+      "name": "Asistente BALTO · Preparar respuesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const context = $('Recibir consulta').first().json;\nconst contactResponse = $('Ver horarios y contacto').first().json;\nconst business = contactResponse.data;\nconst plan = $('Elegir qué buscar').first().json;\nconst response = plan.path === '/api/vet/schedule'\n  ? contactResponse\n  : plan.reuseProduct ? context.initialProduct : $input.first().json;\nconst publicBase = 'http://3.211.103.160'; // n8n-prepare.cjs pone aquí DRUPAL_BASE_URL.\nlet status = context.status;\nlet reply = '';\nlet links = [];\nlet productContext = {};\nlet refineBy = '';\nconst contact = business?.whatsapp ? `Puedes escribirnos al WhatsApp ${business.whatsapp} para consultas o citas.` : '';\nconst cleanUrl = (url, allowedExternal = false) => {\n  if (typeof url !== 'string') return '';\n  if (url.startsWith('/') && !url.startsWith('//')) return publicBase + url;\n  if (allowedExternal && /^https:\\/\\/wa\\.me\\/[0-9]+(?:\\?|$)/.test(url)) return url;\n  return '';\n};\nif (context.intent === 'clinical') {\n  reply = context.urgent\n    ? 'Busca atención veterinaria de urgencia ahora. Llama a BALTO o acude al centro veterinario más cercano.'\n    : 'Para evaluar los síntomas o indicar un tratamiento, tu mascota necesita atención veterinaria. Si parece una urgencia, llama a BALTO o acude a un centro veterinario.';\n  const phone = business?.phone_url;\n  if (typeof phone === 'string' && /^tel:\\+?\\d+$/.test(phone)) links.push({ label: 'Llamar a BALTO', url: phone });\n}\nelse if (context.intent === 'identity') {\n  reply = 'Soy el asistente virtual de BALTO Veterinaria en Juliaca. ¿Buscas algo para tu mascota? Puedo ayudarte con productos, precios, horarios o citas.';\n}\nelse if (!business || !response.data) {\n  status = 503;\n  reply = 'No puedo consultar los datos de BALTO en este momento. Inténtalo de nuevo en unos minutos.';\n}\nelse if (context.intent === 'greeting') reply = '¡Hola! Soy el asistente virtual de BALTO. Cuéntame qué necesitas y te ayudo.';\nelse if (context.intent === 'shopping_advice') {\n  reply = '¡Claro! ¿Qué estás buscando para tu mascota: alimento, algo para el paseo, higiene o un juguete? Cuéntame qué necesitas y te muestro opciones de la tienda.';\n}\nelse if (context.intent === 'delivery') {\n  reply = 'Puedes solicitar retiro en tienda. Si necesitas entrega a domicilio, consulta por WhatsApp si BALTO puede atender tu zona y cuál sería el costo.';\n}\nelse if (context.intent === 'appointment') {\n  reply = 'Escríbenos por WhatsApp para coordinar tu cita y confirmar qué horarios están disponibles.';\n}\nelse if (context.intent === 'purchase') {\n  reply = `Abre la tienda, elige un producto y agrégalo al carrito. Desde el carrito puedes continuar al pedido y revisar las opciones de retiro y pago. ${contact}`;\n  links.push({label: 'Ir a la tienda', url: cleanUrl('/tienda')});\n}\nelse if (context.intent === 'parasite_care') {\n  reply = 'Si tu mascota tiene pulgas o garrapatas, el equipo de BALTO puede orientarte sobre qué producto es adecuado según su especie, edad y peso. Escríbenos por WhatsApp y cuéntanos qué encontraste. Si está decaída o se siente mal, solicita una evaluación veterinaria.';\n}\nelse if (context.intent === 'overview') {\n  const services = response.data.slice(0, 5).map(service => service.title).join(', ');\n  const clinic = services ? `Servicios veterinarios: ${services}.\\n` : '';\n  reply = `${clinic}En la tienda encuentras alimentos, accesorios y productos de cuidado. También puedes separar una cita por WhatsApp.`;\n  links = [\n    { label: 'Ver servicios', url: cleanUrl('/#servicios') },\n    { label: 'Ver tienda', url: cleanUrl('/tienda') },\n  ];\n}\nelse if (context.intent === 'promotions') {\n  reply = 'No tengo promociones registradas para confirmar. Puedes revisar los precios en la tienda o consultar las ofertas vigentes por WhatsApp.';\n  links = [{ label: 'Ver tienda', url: cleanUrl('/tienda') }];\n}\nelse if (context.intent === 'schedule') {\n  reply = `Hospitalización: ${business.hospitalization}.\\nAtención en tienda/consultorio: ${business.consultation_schedule}${business.schedule_is_example && !/ejemplo/i.test(business.consultation_schedule) ? ' (horario de ejemplo)' : ''}\\nSedes:\\n${(business.addresses || []).map(a => '• ' + a).join('\\n')}\\n${contact}`;\n}\nelse if (context.intent === 'services') reply = `Nuestros servicios:\\n${response.data.map(s => '• ' + s.title + ': ' + s.description).join('\\n')}\\n${business.service_pricing_note || ''}\\n${contact}`;\nelse if (context.intent === 'payments') reply = `Medios de pago en el local: ${business.payment_methods || 'Consulta los medios disponibles por WhatsApp'}.${business.yape_number ? '\\nYape del establecimiento: ' + business.yape_number + '.' : ''}\\nEl WhatsApp de atención es ${business.whatsapp}.\\nEn la web puedes solicitar retiro con pago al recoger o Yape coordinado. Confirma disponibilidad y total con BALTO antes de pagar. La opción Pago simulado es solo académica y no genera cobros.`;\nelse if (context.intent === 'service_prices') reply = `${business.service_pricing_note || 'Solicita una cotización de servicios por WhatsApp.'}\\n${contact}`;\nelse if (context.intent === 'categories') reply = `Categorías de la tienda:\\n${response.data.map(c => '• ' + c.name).join('\\n')}\\nDime el nombre de una categoría o de un producto para consultar precios y existencias.`;\nelse if (context.intent === 'product_clarification') reply = '¿De qué producto quieres saber el precio o la disponibilidad? Escríbeme su nombre o código.';\nelse if (context.shoppingCategory === 'alimentos' && !context.species) {\n  reply = '¿Buscas alimento para perro o para gato?';\n  refineBy = 'species';\n  productContext = { productSku: null };\n}\nelse if (context.intent === 'product' || context.intent === 'category') {\n  let products = response.data;\n  if (context.catalogView) products = products.filter(product => product.available);\n  if (context.catalogView === 'price') products.sort((a, b) => Number(a.price_number) - Number(b.price_number));\n  productContext = { productSku: products.length === 1 &&\n    (response.meta?.total ?? products.length) === 1 ? products[0].sku : null };\n  productContext.shoppingProduct = productContext.productSku ? products[0].name : '';\n  if (!products.length && context.catalogView) reply = 'No encontré productos disponibles para esta búsqueda.';\n  else if (!products.length) reply = `No encontré productos que coincidan. Puedes consultar por nombre o SKU, o preguntar por las categorías. ${contact}`;\n  else {\n    reply = products.slice(0, 5).map(p => p.available ? `• ${p.name} cuesta ${p.price} y hay ${p.stock} ${p.stock === 1 ? 'unidad disponible' : 'unidades disponibles'}.` : `• ${p.name}: ese producto está agotado por ahora. Su precio de referencia es ${p.price}.`).join('\\n');\n    if (context.catalogView === 'price') reply = 'Opciones disponibles de menor a mayor precio entre los resultados consultados.\\n' + reply;\n    if (products.length > 5 || (response.meta?.total || 0) > 5) reply += '\\nTe muestro hasta cinco opciones. Escribe un nombre más específico para afinar la búsqueda.';\n    if (context.shoppingCategory === 'alimentos' && !context.age && context.species && !context.catalogView) {\n      refineBy = context.species === 'gato' ? 'cat-age' : 'dog-age';\n      reply += context.species === 'gato' ? '\\n¿Es gatito o adulto?' : '\\n¿Es cachorro o adulto?';\n    }\n    if (response.meta?.catalog_is_example) reply += '\\nProductos, precios y existencias de ejemplo.';\n    links = products.slice(0, 5).map(p => ({ label: 'Ver ' + p.name, url: cleanUrl(p.url) })).filter(l => l.url);\n  }\n  if (context.shoppingCategory) {\n    refineBy ||= 'catalog';\n    const query = $('Elegir qué buscar').first().json.path.split('?')[1] || '';\n    const filters = [query, context.catalogView ? 'disponibles=1' : '', context.catalogView === 'price' ? 'sort=precio_asc' : ''].filter(Boolean);\n    links = links.slice(0, 4);\n    links.push({ label: 'Ver resultados en la tienda', url: cleanUrl('/tienda' + (filters.length ? '?' + filters.join('&') : '')) });\n  }\n}\nelse reply = 'No entendí bien qué necesitas. ¿Buscas un producto, quieres saber qué servicios ofrecemos o necesitas separar una cita?';\nif (business && status === 200) {\n  const appointment = ['appointment', 'overview', 'parasite_care'].includes(context.intent);\n  let url = cleanUrl(appointment ? business.appointment_url || business.whatsapp_url : business.whatsapp_url, true);\n  if (url && !appointment && ['product', 'category', 'delivery'].includes(context.intent)) {\n    const message = context.intent === 'delivery' ? 'Hola, ¿hacen entregas a domicilio? Quisiera consultar cobertura y costo.'\n      : `Hola, quisiera consultar por ${productContext.shoppingProduct || 'los productos de la tienda'}.`;\n    url = url.split('?')[0] + '?text=' + encodeURIComponent(message);\n  }\n  if (url) links.push({ label: appointment ? 'Separar cita por WhatsApp' : 'Consultar por WhatsApp', url });\n}\nreturn [{ json: { status, body: { reply, intent: context.intent, engine: context.engine, links, shoppingSpecies: ['shopping_advice', 'category'].includes(context.intent) ? context.species : '', shoppingCategory: context.shoppingCategory || '', refineBy, shoppingAge: context.age || '', ...productContext } } }];\n"
+      }
+    }
+  ],
+  "connections": {
+    "Recibir consulta": {
+      "main": [
+        [
+          {
+            "node": "Ver horarios y contacto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ver horarios y contacto": {
+      "main": [
+        [
+          {
+            "node": "¿Pidió un tipo de producto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Pidió un tipo de producto?": {
+      "main": [
+        [
+          {
+            "node": "Leer categorías",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Elegir qué buscar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Elegir qué buscar": {
+      "main": [
+        [
+          {
+            "node": "¿Faltan datos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Faltan datos?": {
+      "main": [
+        [
+          {
+            "node": "Buscar en la tienda",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Asistente BALTO · Preparar respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer categorías": {
+      "main": [
+        [
+          {
+            "node": "Elegir qué buscar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar en la tienda": {
+      "main": [
+        [
+          {
+            "node": "Asistente BALTO · Preparar respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 55,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": []
+}
