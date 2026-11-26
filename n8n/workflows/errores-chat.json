@@ -1,0 +1,88 @@
+{
+  "id": "baltoErroresChat",
+  "name": "BALTO · Avisos de errores del chatbot",
+  "active": false,
+  "nodes": [
+    {
+      "id": "Recibir fallo de n8n",
+      "name": "Recibir fallo de n8n",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        250
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "Preparar aviso técnico",
+      "name": "Preparar aviso técnico",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        245,
+        250
+      ],
+      "parameters": {
+        "jsCode": "const event = $input.first().json;\nconst execution = event.execution || {};\nconst node = execution.lastNodeExecuted || event.trigger?.error?.node?.name || 'disparador no identificado';\nconst label = String(node).replace(/[^\\p{L}\\p{N} .¿?_-]/gu, '').slice(0, 80);\nconst id = /^\\d+$/.test(String(execution.id ?? '')) ? String(execution.id) : 'sin registro';\nconst cause = /timeout|timed out/i.test(String(execution.error?.name || '') + ' ' + String(execution.error?.message || ''))\n  ? 'Tiempo de espera agotado'\n  : 'Error de ejecución';\nreturn [{json: {text: [\n  'BALTO · Fallo del chatbot',\n  'Motivo: ' + cause,\n  'Nodo: ' + label,\n  'Ejecución: ' + id,\n].join('\\n')}}];\n"
+      }
+    },
+    {
+      "id": "Avisar fallo por Telegram",
+      "name": "Avisar fallo por Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        490,
+        250
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "__TELEGRAM_CHAT_ID__",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "baltoTelegram",
+          "name": "BALTO Telegram"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Recibir fallo de n8n": {
+      "main": [
+        [
+          {
+            "node": "Preparar aviso técnico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar aviso técnico": {
+      "main": [
+        [
+          {
+            "node": "Avisar fallo por Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 55
+  },
+  "tags": []
+}

@@ -28,7 +28,7 @@ Resultado esperado: respuesta con datos actuales del catálogo o negocio. Puedes
 | `quiero separar una cita` | Contacto y enlace a WhatsApp |
 | `asdfgh zxcv` | Consulta no entendida, ejemplos y contacto |
 
-Las respuestas muestran hasta cinco productos. Busca un nombre o SKU más específico para reducir coincidencias. El asistente no mantiene contexto entre preguntas: cada mensaje debe contener la consulta completa. El historial visible facilita releer la conversación, pero no se usa para deducir referencias como «ese producto».
+Las respuestas muestran hasta cinco productos. Busca un nombre o SKU más específico para reducir coincidencias. El chat envía los últimos cuatro mensajes a n8n y Gemini los usa para entender referencias como «ese producto» o «y el de 3 kg». Los precios y existencias siempre salen de Drupal, y Gemini no puede cambiarlos.
 
 ![Chat en escritorio](capturas/fase-6-chat-escritorio.png)
 
@@ -58,8 +58,8 @@ Estos pasos son para quien administra n8n, si no utiliza el arranque automático
 2. Configura `Name: X-API-KEY` y como valor la clave `VET_API_KEY` del `.env` de Drupal.
 3. Importa `n8n/workflows/chatbot.json` mediante **Import from File** del editor.
 4. Selecciona esa credencial en los tres nodos **HTTP Request**.
-5. Ajusta las direcciones internas de Drupal, el origen permitido de **Recibir chat** y la constante `allowedOrigin` de **Detectar intención**.
-6. Ajusta `publicBase` de **Responder en español** a la URL pública de Drupal.
+5. Ajusta las direcciones internas de Drupal, el origen permitido de **Recibir chat** y la constante `allowedOrigin` de **¿Qué pregunta el cliente?**.
+6. Ajusta `publicBase` de **Armar la respuesta** a la URL pública de Drupal.
 7. Guarda y publica el workflow.
 
 Resultado esperado: `POST /webhook/chat` responde sin mantener una ejecución manual abierta. La [documentación del Webhook](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/) distingue el webhook de prueba del de producción. El servidor n8n debe poder resolver y alcanzar la dirección usada para Drupal; `http://drupal` funciona dentro de esta red Compose.
@@ -82,7 +82,7 @@ Compose transmite `WEBHOOK_URL` también como `N8N_WEBHOOK_URL`, usada por la ve
 ```mermaid
 flowchart LR
   Widget[Widget JS] -->|POST mensaje| Webhook[Recibir chat]
-  Webhook --> Reglas[Detectar intención: Code]
+  Webhook --> Reglas[¿Qué pregunta el cliente?: Code]
   Reglas --> Contacto[HTTP: horarios y contacto]
   Contacto --> Categorias[HTTP: categorías]
   Categorias --> Plan[Code: preparar ruta]

@@ -118,6 +118,7 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
       N8N_DEFAULT_LOCALE: es
+      GEMINI_API_KEY_2: ${GEMINI_API_KEY_2:-}
       GENERIC_TIMEZONE: ${TZ:-America/Lima}
       TZ: ${TZ:-America/Lima}
       EXECUTIONS_DATA_PRUNE: 'true'
