@@ -90,7 +90,7 @@ Resultado esperado: grupo con estas tres reglas; sin 3306, 5678, 8080 ni rangos 
 6. En detalles avanzados deja monitoreo detallado desactivado y CPU credits en **Standard**. Si no aparece en el lanzamiento, cámbialo en los ajustes de crédito de la instancia antes de construir el proyecto. Exige IMDSv2; no se necesita rol IAM para ejecutar esta aplicación.
 7. Lanza una sola instancia y espera a que esté ejecutándose.
 
-Resultado esperado: una EC2 y un solo disco raíz. No crees un balanceador, NAT Gateway, base administrada ni una VPC con asistentes que añadan NAT. Si tu cuenta no tiene VPC predeterminada, utiliza una VPC/subred pública existente permitida por el docente; esta guía no crea redes de pago adicionales.
+Resultado esperado: una EC2 y un solo disco raíz. No crees un balanceador, NAT Gateway, base administrada ni una VPC con asistentes que añadan NAT. Si tu cuenta no tiene VPC predeterminada, utiliza una VPC/subred pública existente permitida.
 
 ## Asociar una Elastic IP
 
