@@ -1,7 +1,8 @@
 const context = $('Recibir consulta').first().json;
 const normalize = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 let path = '/api/vet/schedule';
-if (['services', 'overview'].includes(context.intent)) path = '/api/vet/services';
+let alternative = '';
+if (['services', 'service_prices', 'overview'].includes(context.intent)) path = '/api/vet/services';
 else if (context.intent === 'categories') path = '/api/vet/categories';
 else if (context.intent === 'category') {
   const data = $input.first().json.data;
@@ -15,6 +16,16 @@ else if (context.intent === 'category') {
   if (context.species) filters.push('species=' + encodeURIComponent(context.species));
   path = '/api/vet/products' + (filters.length ? '?' + filters.join('&') : '');
 }
-else if (context.intent === 'product') path = '/api/vet/products?q=' + encodeURIComponent(context.q);
-const reuseProduct = Boolean(context.initialProduct);
-return [{ json: { ...context, path, reuseProduct } }];
+else if (context.intent === 'catalog') path = '/api/vet/products';
+else if (context.intent === 'product') {
+  path = '/api/vet/products?q=' + encodeURIComponent(context.q);
+  if (context.species) path += '&species=' + encodeURIComponent(context.species);
+  const initial = context.initialProduct?.data;
+  if (context.q === 'collar' && context.species === 'gato' && Array.isArray(initial)
+    && initial.every(product => /isabelino/i.test(product.name))) {
+    alternative = 'cat_harness';
+    path = '/api/vet/products?q=arnes&species=gato';
+  }
+}
+const reuseProduct = !alternative && Boolean(context.initialProduct);
+return [{ json: { ...context, path, reuseProduct, alternative } }];

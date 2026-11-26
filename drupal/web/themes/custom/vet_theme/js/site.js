@@ -8,7 +8,8 @@
         if (!navigation) return;
         const setOpen = (open) => {
           button.setAttribute('aria-expanded', String(open));
-          button.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+          const english = document.documentElement.lang === 'en';
+          button.setAttribute('aria-label', english ? (open ? 'Close menu' : 'Open menu') : (open ? 'Cerrar menú' : 'Abrir menú'));
           navigation.classList.toggle('is-open', open);
         };
         button.addEventListener('click', () => setOpen(button.getAttribute('aria-expanded') !== 'true'));

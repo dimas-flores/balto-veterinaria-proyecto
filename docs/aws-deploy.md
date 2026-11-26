@@ -1,6 +1,6 @@
 # Desplegar BALTO en una EC2
 
-**Despliegue actual:** tienda y chat web en **http://3.211.103.160/** (instancia EC2 `BALTO-veterinaria`, región `us-east-1`). Telegram recibe eventos por HTTPS en `baltovet.mooo.com`. Los informes de pruebas anteriores conservan las direcciones usadas en su momento.
+**Estado: BALTO desplegado en EC2 y demo completa comprobada.** Se utiliza una EC2 nueva `t3.medium`, Ubuntu 24.04 y disco raíz de 30 GiB. La dirección actual es **https://balto-veterinaria.3-211-103-160.sslip.io**, con certificado público de HTTPS verificado. Tiene asociada la Elastic IP **3.211.103.160** a la instancia BALTO `i-0b34b63cdbe1fd079`, confirmada en la consola. El enlace se conserva al detener e iniciar mientras se mantenga esa asignación. La fase 8 sigue aplazada. La instancia `roma-drupal-n8n` del hotel pertenece a otro equipo y no se modifica.
 
 ## Diseño y costo mínimo
 
@@ -15,11 +15,11 @@ flowchart LR
   Caddy -->|Solo POST webhook/chat| n8n[n8n]
   n8n -->|API con credencial| Drupal
   Drupal --> DB[(MariaDB privada)]
-  Admin[Tu computadora] -->|SSH solo desde tu IP| SSH[Túnel SSH]
-  SSH -->|127.0.0.1:5678| n8n
+  Admin[Tu computadora] -->|Editor HTTPS con autenticación| Caddy
+  Caddy -->|Red interna de Docker| n8n
 ```
 
-Caddy publica la tienda y únicamente el webhook del chat. El editor n8n queda en loopback; MariaDB y Apache no publican puertos. Se usa la red Docker `172.29.240.0/24`, con el proxy en `172.29.240.10`. Drupal confía en cabeceras reenviadas únicamente desde esa dirección. El [comportamiento de cabeceras de Caddy](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy) respalda esta configuración.
+Caddy publica la tienda y sus webhooks autorizados. El editor puede accederse por HTTPS con autenticación de Caddy. MariaDB y Apache se comunican por la red interna. Se usa la red Docker `172.29.240.0/24`, con el proxy en `172.29.240.10`. Drupal confía en cabeceras reenviadas únicamente desde esa dirección. El [comportamiento de cabeceras de Caddy](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy) respalda esta configuración.
 
 ## Estimación verificada en AWS Pricing Calculator
 
@@ -90,7 +90,7 @@ Resultado esperado: grupo con estas tres reglas; sin 3306, 5678, 8080 ni rangos 
 6. En detalles avanzados deja monitoreo detallado desactivado y CPU credits en **Standard**. Si no aparece en el lanzamiento, cámbialo en los ajustes de crédito de la instancia antes de construir el proyecto. Exige IMDSv2; no se necesita rol IAM para ejecutar esta aplicación.
 7. Lanza una sola instancia y espera a que esté ejecutándose.
 
-Resultado esperado: una EC2 y un solo disco raíz. No crees un balanceador, NAT Gateway, base administrada ni una VPC con asistentes que añadan NAT. Si tu cuenta no tiene VPC predeterminada, utiliza una VPC/subred pública existente.
+Resultado esperado: una EC2 y un solo disco raíz. No crees un balanceador, NAT Gateway, base administrada ni una VPC con asistentes que añadan NAT. Si tu cuenta no tiene VPC predeterminada, utiliza una VPC/subred pública existente permitida por el docente; esta guía no crea redes de pago adicionales.
 
 ## Asociar una Elastic IP
 
@@ -113,13 +113,9 @@ ssh -i balto-demo.pem ubuntu@TU_ELASTIC_IP
 
 Comprueba la identidad del servidor al conectar. Resultado esperado: terminal de Ubuntu en EC2. Los marcadores `TU_ELASTIC_IP` no son direcciones reales. Si falla, revisa que la IP esté asociada, la instancia esté ejecutándose y SSH permita tu IP actual.
 
-## Obtener el repositorio desde EC2
+## Autorizar el repositorio privado de GitHub
 
-El [repositorio de BALTO](https://github.com/dimas-flores/balto-veterinaria-proyecto) se puede clonar por HTTPS. Para instalar desde ese repositorio, pasa directamente a [Aprovisionar y levantar la tienda](#aprovisionar-y-levantar-la-tienda).
-
-### Si usas una copia privada
-
-Configura una clave de despliegue de solo lectura para ese repositorio y usa su URL SSH en `--repo`.
+El código del proyecto está en un repositorio **privado**: <https://github.com/dimas-flores/balto-veterinaria>. No contiene `.env`, bases ni claves privadas. Para clonar desde EC2 se utiliza una clave de despliegue de solo lectura, limitada a este repositorio.
 
 1. En EC2, como usuario `ubuntu`, ejecuta:
 
@@ -162,7 +158,7 @@ En EC2 ejecuta:
 
 ```bash
 sudo bash /home/ubuntu/aws-setup.sh \
-  --repo https://github.com/dimas-flores/balto-veterinaria-proyecto.git \
+  --repo git@github.com:dimas-flores/balto-veterinaria.git \
   --host TU_ELASTIC_IP
 ```
 
@@ -190,13 +186,14 @@ El script de aprovisionamiento descarga actualizaciones de la rama por avance r�
 
 Las cuentas de prueba conservan los nombres documentados en el README, pero **las contraseñas del servidor son distintas de las locales**. Consúltalas en `/opt/balto-veterinaria/.env` desde tu sesión SSH; no las publiques en capturas.
 
-Para el editor n8n abre otra terminal en tu computadora:
+### Editor de n8n por HTTPS con la IPv4 de la EC2
 
-```bash
-ssh -i balto-demo.pem -L 5678:127.0.0.1:5678 ubuntu@TU_ELASTIC_IP
-```
+1. Añade `BALTO_EDITOR_IP=TU_ELASTIC_IP`, `N8N_EDITOR_BASE_URL=https://TU_ELASTIC_IP/` y `N8N_SECURE_COOKIE=true` al `.env` privado. Conserva la URL pública del webhook del chat.
+2. Genera un hash con `sudo docker compose exec proxy caddy hash-password`. Copia `deploy/caddy-sites/editor-ip.caddy.example` a `deploy/caddy-sites/editor-ip.caddy` y reemplaza el marcador con el hash. El archivo local queda excluido de Git.
+3. Aplica la configuración con `sudo docker compose up -d n8n proxy`. Importa en el equipo de administración el certificado raíz público de Caddy de `/data/caddy/pki/authorities/local/root.crt` en el contenedor `proxy`.
+4. Abre `https://TU_ELASTIC_IP/workflow/baltoChatbot` e inicia sesión. El editor usa el 443. Mantén el puerto 5678 cerrado en el grupo de seguridad.
 
-Mantén esa conexión y visita <http://localhost:5678>. Crea la cuenta propietaria si es la primera vez. No abras el puerto 5678 en el Security Group. Si el n8n local ocupa ese puerto, usa `-L 15678:127.0.0.1:5678` y abre <http://localhost:15678>.
+En la EC2 de BALTO, la tienda y el webhook web se sirven por HTTP. Un dominio independiente puede servir el webhook de Telegram por HTTPS. Para reproducir esa ruta, configura `BALTO_TELEGRAM_SITE_ADDRESS` y copia `deploy/caddy-sites/telegram.caddy.example` como `deploy/caddy-sites/telegram.caddy`. Conserva el secreto del webhook fuera de Git.
 
 Sin dominio, HTTP sirve para esta demo con datos ficticios; no utilices datos reales de clientes. Para un uso real configura HTTPS antes de introducirlos.
 
@@ -210,7 +207,7 @@ No hace falta comprar un dominio para completar la demo. Si ya dispones de uno:
 
    ```bash
    sudo bash /home/ubuntu/aws-setup.sh \
-     --repo https://github.com/dimas-flores/balto-veterinaria-proyecto.git \
+     --repo git@github.com:dimas-flores/balto-veterinaria.git \
      --host tienda.TU_DOMINIO --https
    ```
 
@@ -345,9 +342,9 @@ Se ejecutaron [10 comprobaciones de configuración](verificacion-fase-9-config.j
 
 También se realizó un [backup en EC2 y se comprobó la recuperación del servicio](verificacion-fase-9-backup.json). Los checksums fueron correctos y estaban presentes SQL, archivos Drupal y SQLite n8n. Se verificó que los secretos del servidor eran distintos de los locales y que `.env` tenía permisos `0600`. La copia permanece privada en `/opt/balto-veterinaria/backups/`; se descargó también una copia privada fuera de EC2, en `.local/share/balto-dev/aws-backups/` de esta computadora.
 
-## Configuración anterior de HTTPS (histórico)
+## Nombre gratuito y HTTPS activos
 
-URL usada en esa prueba: **https://balto-veterinaria.3-211-103-160.sslip.io**. Se usa el servicio de DNS automático [sslip.io / nip.io](https://sslip.io/): la IP está incluida en el nombre y el proveedor la resuelve sin registrar una cuenta. No se creó una cuenta DuckDNS ni se compró un dominio. Este método no demuestra cómo se configuró el proyecto del hotel; su enlace no se ha proporcionado.
+URL actual: **https://balto-veterinaria.3-211-103-160.sslip.io**. Se usa el servicio de DNS automático [sslip.io / nip.io](https://sslip.io/): la IP está incluida en el nombre y el proveedor la resuelve sin registrar una cuenta. No se creó una cuenta DuckDNS ni se compró un dominio. Este método no demuestra cómo se configuró el proyecto del hotel; su enlace no se ha proporcionado.
 
 Se adaptó el entorno existente sin cambiar secretos, pedidos ni inventario:
 
@@ -356,7 +353,7 @@ python3 scripts/configure-aws-env.py --host balto-veterinaria.3-211-103-160.ssli
 sudo docker compose up -d
 ```
 
-Caddy obtuvo el certificado público y redirige HTTP a HTTPS. Se comprobaron la cadena de confianza TLS, portada, acceso Drupal, enlaces de producto y el chat en el mismo origen. El precio de la pelota sigue en S/ 12.90 y su saldo en 24 tras la demo de EC2. [Informe de HTTPS](verificacion-dominio-https.json). Este resultado corresponde a la configuración de esa prueba.
+Caddy obtuvo el certificado público y redirige HTTP a HTTPS. Se comprobaron la cadena de confianza TLS, portada, acceso Drupal, enlaces de producto y el chat en el mismo origen. El precio de la pelota sigue en S/ 12.90 y su saldo en 24 tras la demo de EC2. [Informe de HTTPS](verificacion-dominio-https.json). La IP numérica anterior deja de ser la dirección de acceso configurada; utiliza el enlace HTTPS de esta sección.
 
 El nombre apunta a la Elastic IP 3.211.103.160. No liberes esa IP si necesitas conservar el enlace. Una detención normal mantiene la asignación; un reinicio completo o eliminación de recursos del laboratorio puede requerir volver a configurar el despliegue.
 
@@ -382,17 +379,7 @@ El comando comprueba la referencia, el importe, la moneda y ambas cuentas
 antes de registrar el pago. Se puede volver a ejecutar para verificar el mismo
 pedido. Esta recuperación es manual y está limitada al ambiente de pruebas.
 
-## Tienda por IP y webhook HTTPS para Telegram
-
-- Mantén el sitio de Caddy y `DRUPAL_BASE_URL` en `http://3.211.103.160`. Usa ese origen también para `CHAT_ALLOWED_ORIGIN` y agrega `/webhook/chat` para `CHAT_WEBHOOK_URL`.
-- Apunta el registro A de `baltovet.mooo.com` a la IP elástica. En el Caddyfile, mueve los bloques `@telegram_bot` y `handle @telegram_bot` al sitio independiente `baltovet.mooo.com`. Conserva la respuesta 403 en el sitio por IP para la ruta del bot. Dentro del sitio HTTPS, rechaza con 403 el webhook sin su cabecera válida y responde 404 para el resto de rutas.
-- Configura `WEBHOOK_URL=https://baltovet.mooo.com/` para n8n. Valida y recarga Caddy, luego recrea n8n para que publique `baltoBot`.
-
 Para publicar el webhook de Telegram en EC2, configura
 `BALTO_TELEGRAM_WEBHOOK_SECRET` con 64 caracteres hexadecimales aleatorios y
 registra ese mismo secreto en Telegram para los tipos de evento `message` y
 `callback_query`. Caddy verifica ese secreto antes de reenviar la petición a n8n.
-
-En `setWebhook`, usa la URL `https://baltovet.mooo.com/webhook/balto-bot-webhook/webhook` y el secreto como `secret_token`. Confirma con `getWebhookInfo` y envía `/start` al bot. No publiques el token del bot ni el secreto de Caddy.
-
-El repositorio incluye la variante del mapa con carga diferida. En EC2 se conservó el mapa anterior por decisión de la revisión visual.

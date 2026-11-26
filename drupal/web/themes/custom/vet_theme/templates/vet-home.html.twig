@@ -3,14 +3,14 @@
 <section class="hero hero-carousel balto-hero" aria-labelledby="hero-title">
   <div class="container hero-grid">
     <div class="hero-copy">
-      <h1 id="hero-title">{% if business.slogan == 'Medicina para tu mascota' %}<span class="hl"><span>Medicina para</span></span> <span class="hl"><span>tu <em>mascota.</em></span></span>{% else %}{{ business.slogan }}{% endif %}</h1>
-      <p class="hero-description">Consulta veterinaria, vacunas, cirugía y hospitalización en Juliaca.</p>
-      <div class="hero-actions"><a class="button" href="{{ business.appointment_url }}" target="_blank" rel="noopener noreferrer">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'whatsapp'} only %} Separar cita por WhatsApp</a><a class="text-link" href="{{ path('vet_api.catalog') }}">Ver tienda</a></div>
+      <h1 id="hero-title">{% if business.slogan == 'Medicina para tu mascota' %}<span class="hl"><span>{{ vet_english ? "Care for" : "Medicina para" }}</span></span> <span class="hl"><span>tu <em>{{ vet_english ? "pet." : "mascota." }}</em></span></span>{% else %}{{ business.slogan }}{% endif %}</h1>
+      <p class="hero-description">{{ vet_english ? "Veterinary consultations, vaccinations, surgery and inpatient care in Juliaca." : "Consulta veterinaria, vacunas, cirugía y hospitalización en Juliaca." }}</p>
+      <div class="hero-actions"><a class="button" href="{{ business.appointment_url }}" target="_blank" rel="noopener noreferrer">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'whatsapp'} only %} Separar cita por WhatsApp</a><a class="text-link" href="{{ path('vet_api.catalog') }}">{{ vet_english ? "Browse the shop" : "Ver tienda" }}</a></div>
     </div>
     <div class="hero-visual">
       <div class="hero-image{% if clinic_gallery.portada %} hero-image-clinic{% endif %}">{% if clinic_gallery.portada %}<img src="{{ clinic_gallery.portada.image_url }}" width="{{ clinic_gallery.portada.width }}" height="{{ clinic_gallery.portada.height }}" alt="{{ clinic_gallery.portada.alt }}" fetchpriority="high" />{% else %}<img src="{{ assets }}/images/companeros.jpg" width="1500" height="1001" alt="Dos perros paseando juntos al aire libre" fetchpriority="high" />{% endif %}</div>
       {% set story = clinic_gallery.stories|first %}
-      {% if story %}<a class="hero-story" href="#historias"><img src="{{ story.image_url }}" width="48" height="48" alt="" aria-hidden="true" loading="lazy" decoding="async" /><span><small>Historia de un paciente</small><strong>{{ story.title }}</strong></span></a>{% endif %}
+      {% if story %}<a class="hero-story" href="#historias"><img src="{{ story.image_url }}" width="48" height="48" alt="" aria-hidden="true" loading="lazy" decoding="async" /><span><small>{{ vet_english ? "A patient story" : "Historia de un paciente" }}</small><strong>{{ story.title }}</strong></span></a>{% endif %}
       <a class="care-badge" href="{{ business.phone_url }}"><span class="care-badge-icon">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'cross'} only %}</span><span><strong>Hospitalización {{ business.hospitalization }}</strong><small>¿Urgencia? Llama al {{ business.whatsapp }}</small></span></a>
     </div>
   </div>
@@ -18,12 +18,12 @@
 
 <section id="servicios" class="section services-section" aria-labelledby="services-title">
   <div class="container">
-    <div class="section-heading"><div><h2 id="services-title">Servicios veterinarios</h2></div></div>
+    <div class="section-heading"><div><h2 id="services-title">{{ vet_english ? "Veterinary services" : "Servicios veterinarios" }}</h2></div></div>
     {% if business.service_pricing_note %}<div class="services-pricing-note"><p>{{ business.service_pricing_note }}</p></div>{% endif %}
     <div class="services-grid">
       {% for service in services %}
         <a class="service-card{% if service.icon == 'moon' %} service-card-featured{% endif %}" href="{{ service.url }}"><span class="service-icon">{% include '@vet_theme/templates/icon.html.twig' with {icon: service.icon} only %}</span><h3>{{ service.title }}</h3><p>{{ service.description }}</p></a>
-      {% else %}<p class="empty-state">Estamos actualizando nuestros servicios. Escríbenos por WhatsApp para orientarte.</p>{% endfor %}
+      {% else %}<p class="empty-state">{{ vet_english ? "We are updating our services. Contact us on WhatsApp for help." : "Estamos actualizando nuestros servicios. Escríbenos por WhatsApp para orientarte." }}</p>{% endfor %}
     </div>
   </div>
 </section>
@@ -31,25 +31,25 @@
 {# Fotos reales del equipo y los equipos de BALTO, tomadas de sus publicaciones de Facebook. #}
 <section id="clinica" class="section clinic-work" aria-labelledby="clinic-work-title">
   <div class="container">
-    <div class="section-heading"><div><h2 id="clinic-work-title">Así trabajamos</h2></div><p>Fotos de nuestro equipo en la clínica de Juliaca.</p></div>
+    <div class="section-heading"><div><h2 id="clinic-work-title">{{ vet_english ? "How we work" : "Así trabajamos" }}</h2></div><p>{{ vet_english ? "Photos of our team at the Juliaca clinic." : "Fotos de nuestro equipo en la clínica de Juliaca." }}</p></div>
     <div class="clinic-work-grid">
       {% for photo in [
         {file: 'clinica-cirugia', title: 'Cirugía', text: 'Quirófano equipado para esterilizaciones, fracturas y tejidos blandos.', alt: 'Veterinario de BALTO con uniforme quirúrgico verde en el quirófano'},
-        {file: 'clinica-monitoreo', title: 'Monitoreo', text: 'Anestesia controlada y monitoreo durante toda la cirugía.', alt: 'Veterinario de BALTO revisando los monitores junto a un paciente anestesiado'},
+        {file: 'clinica-monitoreo', ext: 'webp', title: 'Monitoreo', text: 'Anestesia controlada y monitoreo durante toda la cirugía.', alt: 'Veterinario de BALTO revisando los monitores junto a un paciente anestesiado'},
         {file: 'clinica-ecografia', title: 'Ecografía', text: 'Ecografías en la clínica para un diagnóstico rápido.', alt: 'Veterinaria de BALTO realizando una ecografía'},
-        {file: 'clinica-hospitalizacion', title: 'Hospitalización', text: 'Pacientes internados con suero por bomba de infusión.', alt: 'Cachorro hospitalizado con suero conectado a una bomba de infusión'},
+        {file: 'clinica-hospitalizacion', ext: 'webp', title: 'Hospitalización', text: 'Pacientes internados con suero por bomba de infusión.', alt: 'Cachorro hospitalizado con suero conectado a una bomba de infusión'},
         {file: 'clinica-rayosx', title: 'Rayos X', text: 'Equipo de rayos X digital en la clínica.', alt: 'Veterinario de BALTO ajustando el equipo de rayos X'},
       ] %}
-        <figure class="clinic-work-card"><img src="{{ assets }}/images/{{ photo.file }}.jpg" width="640" height="480" alt="{{ photo.alt }}" loading="lazy" decoding="async" /><figcaption><strong>{{ photo.title }}</strong><span>{{ photo.text }}</span></figcaption></figure>
+        <figure class="clinic-work-card"><img src="{{ assets }}/images/{{ photo.file }}.{{ photo.ext|default('jpg') }}" width="640" height="480" alt="{{ photo.alt }}" loading="lazy" decoding="async" /><figcaption><strong>{{ photo.title }}</strong><span>{{ photo.text }}</span></figcaption></figure>
       {% endfor %}
     </div>
   </div>
 </section>
 
 <section class="section retail-home" aria-labelledby="retail-title"><div class="container">
-  <div class="retail-heading"><div><h2 id="retail-title">Tienda para mascotas</h2></div><a class="button" href="{{ path('vet_api.catalog') }}">Ver toda la tienda {% include '@vet_theme/templates/icon.html.twig' with {icon: 'bag'} only %}</a></div>
-  <form class="retail-search" action="{{ path('vet_api.catalog') }}" method="get"><label for="home-product-search">¿Qué necesita tu mascota?</label><div><input id="home-product-search" type="search" name="q" maxlength="100" placeholder="Busca alimento, accesorios o cuidado…" /><button type="submit" aria-label="Buscar productos">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'search'} only %}<span>Buscar</span></button></div></form>
-  <nav class="retail-pets" aria-label="Comprar según tu mascota"><a href="{{ path('vet_api.catalog', {}, {'query': {'species': 'perro'}}) }}"><img class="retail-pet-photo" aria-hidden="true" src="{{ assets }}/images/para-perro.jpg" alt="" width="900" height="700" loading="lazy" /><span>Para tu perro</span><small>Alimentos, paseos y juegos</small></a><a href="{{ path('vet_api.catalog', {}, {'query': {'species': 'gato'}}) }}"><img class="retail-pet-photo" aria-hidden="true" src="{{ assets }}/images/para-gato-balto.jpg" alt="" width="900" height="700" loading="lazy" /><span>Para tu gato</span><small>Alimentos, higiene y accesorios</small></a></nav>
+  <div class="retail-heading"><div><h2 id="retail-title">{{ vet_english ? "Pet shop" : "Tienda para mascotas" }}</h2></div><a class="button" href="{{ path('vet_api.catalog') }}">Ver toda la tienda {% include '@vet_theme/templates/icon.html.twig' with {icon: 'bag'} only %}</a></div>
+  <form class="retail-search" action="{{ path('vet_api.catalog') }}" method="get"><label for="home-product-search">{{ vet_english ? "What does your pet need?" : "¿Qué necesita tu mascota?" }}</label><div><input id="home-product-search" type="search" name="q" maxlength="100" placeholder="Busca alimento, accesorios o cuidado…" /><button type="submit" aria-label="Buscar productos">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'search'} only %}<span>{{ vet_english ? "Search" : "Buscar" }}</span></button></div></form>
+  <nav class="retail-pets" aria-label="Comprar según tu mascota"><a href="{{ path('vet_api.catalog', {}, {'query': {'species': 'perro'}}) }}"><img class="retail-pet-photo" aria-hidden="true" src="{{ assets }}/images/para-perro.jpg" alt="" width="900" height="700" loading="lazy" /><span>{{ vet_english ? "For dogs" : "Para tu perro" }}</span><small>{{ vet_english ? "Food, walking gear and toys" : "Alimentos, paseos y juegos" }}</small></a><a href="{{ path('vet_api.catalog', {}, {'query': {'species': 'gato'}}) }}"><img class="retail-pet-photo" aria-hidden="true" src="{{ assets }}/images/para-gato-balto.jpg" alt="" width="900" height="700" loading="lazy" /><span>{{ vet_english ? "For cats" : "Para tu gato" }}</span><small>{{ vet_english ? "Food, grooming and accessories" : "Alimentos, higiene y accesorios" }}</small></a></nav>
 </div></section>
 
 <section id="nosotros" class="about-section" aria-labelledby="about-title">
@@ -60,7 +60,7 @@
         <figcaption><span class="photo-caption-mark" aria-hidden="true">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'paw'} only %}</span><span>{{ clinic_gallery.nosotros.caption }}</span></figcaption>
       </figure>
     {% else %}
-      <div class="about-mark" aria-hidden="true"><span>BALTO</span>{% include '@vet_theme/templates/icon.html.twig' with {icon: 'paw'} only %}<small>MEDICINA PARA TU MASCOTA</small></div>
+      <div class="about-mark" aria-hidden="true"><span>BALTO</span>{% include '@vet_theme/templates/icon.html.twig' with {icon: 'paw'} only %}<small>{{ vet_english ? "VETERINARY CARE FOR YOUR PET" : "MEDICINA PARA TU MASCOTA" }}</small></div>
     {% endif %}
     <div class="about-copy"><h2 id="about-title">{{ business.about_title }}</h2><p>{{ business.about_text }}</p></div>
   </div>
@@ -69,7 +69,7 @@
 {% if clinic_gallery.stories %}
 <section id="historias" class="section stories-section" aria-labelledby="stories-title">
   <div class="container">
-    <div class="section-heading"><div><h2 id="stories-title">Historias que<br /><em>nos acompañan.</em></h2></div></div>
+    <div class="section-heading"><div><h2 id="stories-title">{{ vet_english ? "Stories that" : "Historias que" }}<br /><em>{{ vet_english ? "stay with us." : "nos acompañan." }}</em></h2></div></div>
     <div class="stories-grid">
       {% for story in clinic_gallery.stories %}
         <article class="story-card">
@@ -82,6 +82,6 @@
 </section>
 {% endif %}
 
-<section id="ubicacion" class="section location-section" aria-labelledby="location-title"><div class="container"><div class="section-heading"><div><h2 id="location-title">Nos vemos<br /><em>en Juliaca.</em></h2></div></div><div class="location-grid"><div class="locations-info"><figure class="local-facade"><img src="{{ assets }}/images/clinica-fachada-2.jpg" width="923" height="712" alt="Fachada de BALTO Veterinaria y Spa Canino en Juliaca, con la ambulancia veterinaria en la puerta" loading="lazy" decoding="async" /></figure>{% for address in business.addresses %}<article class="address-row"><div><h3>{{ loop.first ? 'Sede central' : 'Segunda sede' }}</h3><p>{{ address }}</p><a class="text-link" href="{{ loop.first ? business.maps_link : 'https://www.google.com/maps/search/?api=1&query=' ~ (address ~ ', Juliaca, Puno, Perú')|url_encode }}" target="_blank" rel="noopener noreferrer">Cómo llegar</a></div></article>{% endfor %}<div id="horarios" class="schedule-panel"><h3>{% include '@vet_theme/templates/icon.html.twig' with {icon: 'clock'} only %} Nuestros horarios</h3><div class="schedule-hospital"><span>Hospitalización</span><strong>{{ business.hospitalization }}</strong></div><div class="consultation-hours"><strong>Tienda y consultorio</strong>{% if business.schedule_is_example %}<span class="example-label">Horario de ejemplo · Por confirmar</span>{% endif %}<p>{{ business.consultation_schedule }}</p></div></div>{# Calificación de la ficha de Google de BALTO (4,3 de 5 · 50 reseñas al 24-11-2026): actualizar a mano si cambia. #}<div class="local-reviews"><h3><span class="stars" aria-hidden="true">★★★★☆</span> Reseñas en Google</h3><p><strong>4,3 de 5</strong> · 50 reseñas de nuestros clientes</p><a class="text-link" href="{{ business.maps_link }}" target="_blank" rel="noopener noreferrer">Ver reseñas en Google</a></div></div><div class="map-wrap"><iframe title="Mapa de la sede central de BALTO Veterinaria en Juliaca" data-map-src="{{ business.map_url }}" width="640" height="560" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div></div></div></section>
+<section id="ubicacion" class="section location-section" aria-labelledby="location-title"><div class="container"><div class="section-heading"><div><h2 id="location-title">{{ vet_english ? "See you" : "Nos vemos" }}<br /><em>{{ vet_english ? "in Juliaca." : "en Juliaca." }}</em></h2></div></div><div class="location-grid"><div class="locations-info"><figure class="local-facade"><img src="{{ assets }}/images/clinica-fachada-2.webp" width="923" height="712" alt="Fachada de BALTO Veterinaria y Spa Canino en Juliaca, con la ambulancia veterinaria en la puerta" loading="lazy" decoding="async" /></figure>{% for address in business.addresses %}<article class="address-row"><div><h3>{{ loop.first ? 'Sede central' : 'Segunda sede' }}</h3><p>{{ address }}</p><a class="text-link" href="{{ loop.first ? business.maps_link : 'https://www.google.com/maps/search/?api=1&query=' ~ (address ~ ', Juliaca, Puno, Perú')|url_encode }}" target="_blank" rel="noopener noreferrer">{{ vet_english ? "Get directions" : "Cómo llegar" }}</a></div></article>{% endfor %}<div id="horarios" class="schedule-panel"><h3>{% include '@vet_theme/templates/icon.html.twig' with {icon: 'clock'} only %} Nuestros horarios</h3><div class="schedule-hospital"><span>{{ vet_english ? "Inpatient care" : "Hospitalización" }}</span><strong>{{ business.hospitalization }}</strong></div><div class="consultation-hours"><strong>{{ vet_english ? "Shop and clinic" : "Tienda y consultorio" }}</strong>{% if business.schedule_is_example %}<span class="example-label">{{ vet_english ? "Sample hours · To be confirmed" : "Horario de ejemplo · Por confirmar" }}</span>{% endif %}<p>{{ business.consultation_schedule }}</p></div></div>{# Calificación de la ficha de Google de BALTO (4,3 de 5 · 50 reseñas al 24-11-2026): actualizar a mano si cambia. #}<div class="local-reviews"><h3><span class="stars" aria-hidden="true">★★★★☆</span> Reseñas en Google</h3><p><strong>{{ vet_english ? "4.3 out of 5" : "4,3 de 5" }}</strong> · 50 reseñas de nuestros clientes</p><a class="text-link" href="{{ business.maps_link }}" target="_blank" rel="noopener noreferrer">{{ vet_english ? "Read Google reviews" : "Ver reseñas en Google" }}</a></div></div><div class="map-wrap"><iframe title="Mapa de la sede central de BALTO Veterinaria en Juliaca" data-map-src="{{ business.map_url }}" width="640" height="560" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div></div></div></section>
 
-<section id="contacto" class="contact-section"><div class="container contact-inner"><div><h2>Estamos para ti.<br /><em>Y para tu mascota.</em></h2></div><a class="button" href="{{ business.appointment_url }}" target="_blank" rel="noopener noreferrer">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'whatsapp'} only %} Separar cita por WhatsApp</a></div></section>
+<section id="contacto" class="contact-section"><div class="container contact-inner"><div><h2>{{ vet_english ? "We’re here for you." : "Estamos para ti." }}<br /><em>{{ vet_english ? "And for your pet." : "Y para tu mascota." }}</em></h2></div><a class="button" href="{{ business.appointment_url }}" target="_blank" rel="noopener noreferrer">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'whatsapp'} only %} Separar cita por WhatsApp</a></div></section>

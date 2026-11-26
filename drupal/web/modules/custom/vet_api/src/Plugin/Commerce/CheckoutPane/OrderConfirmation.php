@@ -64,6 +64,15 @@ final class OrderConfirmation extends CheckoutPaneBase {
       if (preg_match('/^9\d{8}$/', $phone)) {
         $pane_form['whatsapp'] = ['#type' => 'link', '#title' => $this->t('Coordinar pedido por WhatsApp'), '#url' => Url::fromUri('https://wa.me/51' . $phone, ['query' => ['text' => $message]]), '#attributes' => ['class' => ['button', 'order-whatsapp'], 'target' => '_blank', 'rel' => 'noopener noreferrer']];
       }
+      if ($gateway_id === 'yape_coordinado' && !$this->order->isPaid() && preg_match('/^9\d{8}$/', $phone)) {
+        $receipt_message = $this->t('Hola, BALTO. Adjunto el comprobante de Yape del pedido @number por @total. Por favor, confirmen la recepción.', ['@number' => $number, '@total' => $formatted_total]);
+        $pane_form['receipt'] = [
+          '#type' => 'link',
+          '#title' => $this->t('Enviar comprobante por WhatsApp'),
+          '#url' => Url::fromUri('https://wa.me/51' . $phone, ['query' => ['text' => (string) $receipt_message]]),
+          '#attributes' => ['class' => ['text-link'], 'target' => '_blank', 'rel' => 'noopener noreferrer'],
+        ];
+      }
       if (!empty($business['catalog_is_example'])) {
         $pane_form['example'] = ['#type' => 'html_tag', '#tag' => 'p', '#value' => $this->t('El catálogo actual tiene productos, precios y existencias de ejemplo. No pagues basándote en esos importes; espera la confirmación de BALTO.')];
       }

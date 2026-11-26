@@ -1,10 +1,10 @@
 <section class="catalog-header balto-catalog-hero catalog-trial" aria-labelledby="catalog-title">
   <div class="catalog-intro-copy">
-    <nav class="catalog-breadcrumb" aria-label="Ruta de navegación"><a href="{{ path('<front>') }}">Inicio</a><span aria-hidden="true">/</span><span aria-current="page">Tienda</span></nav>
-    <h1 id="catalog-title">Tienda para mascotas</h1>
-    <p>Alimentos, accesorios y productos de cuidado para perros y gatos.</p>
+    <nav class="catalog-breadcrumb" aria-label="Ruta de navegación"><a href="{{ path('<front>') }}">{{ vet_english ? "Home" : "Inicio" }}</a><span aria-hidden="true">/</span><span aria-current="page">{{ vet_english ? "Shop" : "Tienda" }}</span></nav>
+    <h1 id="catalog-title">{{ vet_english ? "Pet shop" : "Tienda para mascotas" }}</h1>
+    <p>{{ vet_english ? "Food, accessories and care products for dogs and cats." : "Alimentos, accesorios y productos de cuidado para perros y gatos." }}</p>
     <form class="catalog-hero-search" action="{{ path('vet_api.catalog') }}" method="get">
-      <label for="catalog-hero-query">¿Qué buscas para tu mascota?</label>
+      <label for="catalog-hero-query">{{ vet_english ? "What are you looking for?" : "¿Qué buscas para tu mascota?" }}</label>
       <div><input id="catalog-hero-query" type="search" name="q" value="{{ filters.q }}" placeholder="Busca alimento, collar…" maxlength="100" />
       {% if filters.category %}<input type="hidden" name="category" value="{{ filters.category }}" />{% endif %}
       {% if filters.species %}<input type="hidden" name="species" value="{{ filters.species }}" />{% endif %}
@@ -17,25 +17,25 @@
       {% set search_query = filters|filter((value, name) => name in ['q', 'sort', 'disponibles'] and value is not empty) %}
       {% set category_query = filters.category ? {category: filters.category} : {} %}
       {% set shortcut_query = search_query|merge(category_query) %}
-      <a href="{{ path('vet_api.catalog', {}, {query: shortcut_query}) }}"{% if not filters.species %} aria-current="true"{% endif %}>Todas</a>
+      <a href="{{ path('vet_api.catalog', {}, {query: shortcut_query}) }}"{% if not filters.species %} aria-current="true"{% endif %}>{{ vet_english ? "All pets" : "Todas" }}</a>
       {% for id, label in {perro: 'Perros', gato: 'Gatos'} %}
         <a href="{{ path('vet_api.catalog', {}, {query: shortcut_query|merge({species: id})}) }}"{% if filters.species == id %} aria-current="true"{% endif %}>{{ label }}</a>
       {% endfor %}
     </nav>
   </div>
 </section>
-<nav class="catalog-categories" aria-label="Explorar categorías"><a href="{{ path('vet_api.catalog', {}, {query: search_query|merge(filters.species ? {species: filters.species} : {})}) }}"{% if not filters.category %} aria-current="page"{% endif %}>Todo el catálogo</a>{% for id, label in categories %}<a href="{{ path('vet_api.catalog', {}, {query: search_query|merge(filters.species ? {species: filters.species} : {})|merge({category: id})}) }}"{% if filters.category == id %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}</nav>
-{% if business.catalog_is_example %}<div class="catalog-demo-notice"><span class="demo-indicator"></span><p><strong>Catálogo de demostración.</strong> Productos, precios y existencias de ejemplo. Las fotos son referenciales y no muestran el producto exacto.</p></div>{% endif %}
+<nav class="catalog-categories" aria-label="Explorar categorías"><a href="{{ path('vet_api.catalog', {}, {query: search_query|merge(filters.species ? {species: filters.species} : {})}) }}"{% if not filters.category %} aria-current="page"{% endif %}>{{ vet_english ? "All products" : "Todo el catálogo" }}</a>{% for id, label in categories %}<a href="{{ path('vet_api.catalog', {}, {query: search_query|merge(filters.species ? {species: filters.species} : {})|merge({category: id})}) }}"{% if filters.category == id %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}</nav>
+{% if business.catalog_is_example %}<div class="catalog-demo-notice"><span class="demo-indicator"></span><p><strong>{{ vet_english ? "Demo catalog." : "Catálogo de demostración." }}</strong> Productos, precios y existencias de ejemplo. Las fotos son referenciales y no muestran el producto exacto.</p></div>{% endif %}
 <div class="catalog-layout">
   <aside class="catalog-sidebar" aria-label="Filtros del catálogo">
     {# Categoría y mascota se eligen con las pastillas de arriba; aquí solo se ordena y se acota. #}
     <details class="catalog-filter-disclosure" open><summary>Ordenar y filtrar{% set active_count = (filters.category ? 1 : 0) + (filters.species ? 1 : 0) + (filters.disponibles ? 1 : 0) %}{% if active_count %} ({{ active_count }} {{ active_count == 1 ? 'activo' : 'activos' }}){% endif %} <span aria-hidden="true">+</span></summary><form class="catalog-filters" method="get" action="{{ path('vet_api.catalog') }}">
-      <h2>Ordenar y filtrar</h2>
+      <h2>{{ vet_english ? "Sort and filter" : "Ordenar y filtrar" }}</h2>
       {% for name in ['q', 'category', 'species'] %}{% if filters[name] %}<input type="hidden" name="{{ name }}" value="{{ filters[name] }}" />{% endif %}{% endfor %}
-      <div class="catalog-filter-field"><label for="catalog-sort">Ordenar por</label><select id="catalog-sort" name="sort">{% for id, label in sort_options %}<option value="{{ id }}"{% if filters.sort == id %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <div class="catalog-filter-field"><label for="catalog-sort">{{ vet_english ? "Sort by" : "Ordenar por" }}</label><select id="catalog-sort" name="sort">{% for id, label in sort_options %}<option value="{{ id }}"{% if filters.sort == id %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
       <label class="catalog-filter-check" for="catalog-available"><input id="catalog-available" type="checkbox" name="disponibles" value="1"{% if filters.disponibles %} checked{% endif %} /> Solo productos disponibles</label>
-      <button class="button" type="submit">Aplicar</button>
-      {% if filters|filter(value => value is not empty) %}<a class="clear-filters" href="{{ path('vet_api.catalog') }}">Limpiar filtros</a>{% endif %}
+      <button class="button" type="submit">{{ vet_english ? "Apply filters" : "Aplicar" }}</button>
+      {% if filters|filter(value => value is not empty) %}<a class="clear-filters" href="{{ path('vet_api.catalog') }}">{{ vet_english ? "Clear filters" : "Limpiar filtros" }}</a>{% endif %}
     </form></details>
 
   </aside>
@@ -52,7 +52,7 @@
       </ul>
     {% endif %}
     {% if products %}<div class="product-grid">{% for item in products %}
-      {% include '@vet_theme/templates/product-card.html.twig' with {item: item} only %}
-    {% endfor %}</div><div class="catalog-pager">{{ pager }}</div>{% else %}<div class="catalog-empty">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'bag'} only %}<h3>No encontramos coincidencias.</h3><p>Prueba con otro nombre o limpia los filtros.</p><a class="button" href="{{ path('vet_api.catalog') }}">Ver todos los productos</a></div>{% endif %}
+      {% include '@vet_theme/templates/product-card.html.twig' with {item: item, vet_english: vet_english} only %}
+    {% endfor %}</div><div class="catalog-pager">{{ pager }}</div>{% else %}<div class="catalog-empty">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'bag'} only %}<h3>{{ vet_english ? "No matching products" : "No encontramos coincidencias." }}</h3><p>{{ vet_english ? "Try another name or clear the filters." : "Prueba con otro nombre o limpia los filtros." }}</p><a class="button" href="{{ path('vet_api.catalog') }}">{{ vet_english ? "See all products" : "Ver todos los productos" }}</a></div>{% endif %}
   </section>
 </div>

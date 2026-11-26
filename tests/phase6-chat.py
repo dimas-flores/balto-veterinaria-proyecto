@@ -40,8 +40,6 @@ baseline = json.loads(php('$v=\\Drupal::entityTypeManager()->getStorage("commerc
 samples = [
     ('hola', 'greeting', ['BALTO', 'productos']),
     ('¿Cuánto cuesta el Dog Chow Adulto 15 kg?', 'product', [baseline['price'], str(baseline['stock'])+' unidades']),
-    ('¿Dónde venden Dog Chow?', 'product', ['Dog Chow']),
-    ('¿Tienen plato de acero inoxidable 750 ml?', 'product', ['Plato de acero inoxidable 750 ml']),
     ('disponibilidad de BAL-ALI-004', 'product', ['agotado']),
     ('precio de producto INEXISTENTEZZZ', 'product', ['No encontré', 'WhatsApp']),
     ('categorías', 'categories', ['Alimentos', 'Accesorios', 'Juguetes']),

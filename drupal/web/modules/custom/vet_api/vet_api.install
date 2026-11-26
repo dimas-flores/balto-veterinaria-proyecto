@@ -1,0 +1,30 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function vet_api_schema(): array {
+  return [
+    'vet_appointment' => [
+      'description' => 'Reservations for the BALTO appointment calendar.',
+      'fields' => [
+        'start_at' => ['type' => 'int', 'size' => 'big', 'not null' => TRUE],
+        'reference' => ['type' => 'varchar', 'length' => 36, 'not null' => TRUE],
+        'species' => ['type' => 'varchar', 'length' => 25, 'not null' => TRUE],
+        'reason' => ['type' => 'varchar', 'length' => 25, 'not null' => TRUE],
+      ],
+      'primary key' => ['start_at'],
+      'unique keys' => ['reference' => ['reference']],
+    ],
+  ];
+}
+
+/**
+ * Creates the BALTO appointment calendar for existing installations.
+ */
+function vet_api_update_11001(): void {
+  $schema = \Drupal::database()->schema();
+  if (!$schema->tableExists('vet_appointment')) {
+    $schema->createTable('vet_appointment', vet_api_schema()['vet_appointment']);
+  }
+}

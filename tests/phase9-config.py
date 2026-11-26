@@ -2,7 +2,7 @@
 """Configuración de despliegue en un directorio temporal, sin tocar .env local."""
 import json
 from pathlib import Path
-import runpy
+import os
 import shutil
 import subprocess
 import tempfile
@@ -31,10 +31,10 @@ with tempfile.TemporaryDirectory(prefix='balto-aws-config-') as temporary:
     run(path/'scripts/configure-aws-env.py','--host','balto.example.org','--https')
     https=read()
     check(https['BALTO_SITE_ADDRESS']=='balto.example.org' and https['DRUPAL_BASE_URL']=='https://balto.example.org','Dominio configurado para HTTPS automático')
-    keys = runpy.run_path(str(path/'scripts/init-env.py'))['SECRET_KEYS']
+    keys=[k for k in before if any(word in k for word in ['PASSWORD','API_KEY','HASH_SALT','ENCRYPTION_KEY'])]
     check(all(before[k]==https[k] for k in keys),'Cambiar URL conserva los secretos de la instalación')
     local=dict(line.split('=',1) for line in (ROOT/'.env').read_text().splitlines() if '=' in line and not line.startswith('#'))
-    check(all(before[k] != local[k] for k in keys),'Una instalación nueva genera secretos distintos de desarrollo')
+    check(all(before[k]!=local[k] for k in keys),'Una instalación nueva genera secretos distintos de desarrollo')
     check((path/'.env').stat().st_mode&0o777==0o600,'Archivo .env privado con permisos 0600')
     rejected=subprocess.run(['python3',str(path/'scripts/configure-aws-env.py'),'--host','example.org;evil'],capture_output=True)
     check(rejected.returncode!=0 and read()==https,'Host inválido rechazado sin modificar el entorno')

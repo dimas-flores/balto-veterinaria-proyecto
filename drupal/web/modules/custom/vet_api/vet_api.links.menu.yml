@@ -4,3 +4,8 @@ vet_api.business_settings:
   route_name: vet_api.business_settings
   parent: system.admin_config_system
   weight: 20
+
+vet_api.appointment_agenda:
+  title: 'Agenda de BALTO'
+  route_name: vet_api.appointment_agenda
+  parent: commerce.admin_commerce

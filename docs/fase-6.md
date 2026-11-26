@@ -58,8 +58,8 @@ Estos pasos son para quien administra n8n, si no utiliza el arranque automático
 2. Configura `Name: X-API-KEY` y como valor la clave `VET_API_KEY` del `.env` de Drupal.
 3. Importa `n8n/workflows/chatbot.json` mediante **Import from File** del editor.
 4. Selecciona esa credencial en los tres nodos **HTTP Request**.
-5. Ajusta las direcciones internas de Drupal, el origen permitido de **Recibir chat** y la constante `allowedOrigin` de **¿Qué pregunta el cliente?**.
-6. Ajusta `publicBase` de **Armar la respuesta** a la URL pública de Drupal.
+5. Ajusta las direcciones internas de Drupal, el origen permitido de **Recibir chat** y la constante `allowedOrigin` de **Detectar intención**.
+6. Ajusta `publicBase` de **Responder en español** a la URL pública de Drupal.
 7. Guarda y publica el workflow.
 
 Resultado esperado: `POST /webhook/chat` responde sin mantener una ejecución manual abierta. La [documentación del Webhook](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/) distingue el webhook de prueba del de producción. El servidor n8n debe poder resolver y alcanzar la dirección usada para Drupal; `http://drupal` funciona dentro de esta red Compose.
@@ -82,15 +82,13 @@ Compose transmite `WEBHOOK_URL` también como `N8N_WEBHOOK_URL`, usada por la ve
 ```mermaid
 flowchart LR
   Widget[Widget JS] -->|POST mensaje| Webhook[Recibir chat]
-  Webhook --> Reglas[Clasificar con reglas]
-  Reglas -->|Intención desconocida| Gemini[Clasificar con Gemini si está habilitado]
-  Reglas -->|Intención reconocida| Contacto[Leer horarios y contacto]
-  Gemini --> Contacto
-  Contacto --> Plan[Elegir datos para la respuesta]
-  Plan -->|Si faltan datos| Consulta[Consultar categorías, catálogo o servicios]
-  Plan -->|Con los datos disponibles| Espanol[Armar la respuesta]
-  Consulta --> Espanol
-  Espanol --> Responder[Enviar respuesta]
+  Webhook --> Reglas[Detectar intención: Code]
+  Reglas --> Contacto[HTTP: horarios y contacto]
+  Contacto --> Categorias[HTTP: categorías]
+  Categorias --> Plan[Code: preparar ruta]
+  Plan --> Consulta[HTTP: consultar Drupal]
+  Consulta --> Espanol[Code: respuesta en español]
+  Espanol --> Responder[Respond to Webhook]
   Responder --> Widget
 ```
 

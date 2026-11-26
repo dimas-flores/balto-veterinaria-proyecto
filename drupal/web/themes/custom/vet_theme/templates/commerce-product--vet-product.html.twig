@@ -7,7 +7,7 @@
 {% if related_products %}
   <section class="related-products" aria-labelledby="related-title">
     <h2 id="related-title">También te puede gustar</h2>
-    <div class="product-grid related-product-grid">{% for item in related_products %}{% include '@vet_theme/templates/product-card.html.twig' with {item: item} only %}{% endfor %}</div>
+    <div class="product-grid related-product-grid">{% for item in related_products %}{% include '@vet_theme/templates/product-card.html.twig' with {item: item, vet_english: vet_english} only %}{% endfor %}</div>
   </section>
   {% endif %}
 </article>

@@ -7,11 +7,12 @@ from pathlib import Path
 import urllib.request
 
 CASES = {
-    'identity': ['¿Quién eres?', 'Hola, ¿cómo te llamas?', '¿Con quién hablo?', '¿Eres un bot?',
-                 'Oe, quién eres', '¿Eres una persona o un bot?', '¿Qué puedes hacer?'],
+    'identity': ['¿Quién eres?', 'quien eres tu ?', '¿Quién es usted?', 'Hola, ¿cómo te llamas?', '¿Con quién hablo?', '¿Eres un bot?',
+                 'Oe, quién eres', '¿Eres una persona o un bot?'],
     'greeting': ['Buenas, hola', 'Holaaaa', 'Buenas tardes', 'Hola BALTO', 'Gracias'],
     'product': ['Precio de Dog Chow', 'Tienes arena para gatos', 'Busco Ricocan', 'Tienen Whiscas para cachorro', 'Precio BAL-ALI-002', 'Hay stock de Whiskas', 'Cuánto cuesta Ricocat'],
     'category': ['Alimentos para perro', 'Juguetes para gato', 'Busco accesorios', 'Higiene para mi perro', 'Alimento para gatito'],
+    'catalog': ['dime los precios de productos si', 'Muéstrame el catálogo', '¿Qué productos tienen?'],
     'categories': ['Ver categorías', 'Qué categorías tienen'],
     'services': ['Tienen ecografía', 'Servicios', 'Hay rayos X', 'Hacen esterilización', 'Tienen laboratorio'],
     'schedule': ['Horarios', 'Tienen veterinario de emergencia', 'Dónde atienden', 'Abren el sábado', 'Tienen hospitalización'],
@@ -43,11 +44,19 @@ def check(case):
 
 
 def main():
-    markers = {'Tienen Whiscas para cachorro': 'Whiskas', 'Mi perro no respira': 'urgencia ahora'}
+    markers = {'dime los precios de productos si': 'S/', 'Tienen Whiscas para cachorro': 'Whiskas', 'Mi perro no respira': 'urgencia ahora'}
     cases = [
-        (intent, message, {}, 'Soy el asistente virtual de BALTO Veterinaria' if intent == 'identity' else markers.get(message))
+        (intent, message, {}, 'BALTO Veterinaria' if intent == 'identity' else markers.get(message))
         for intent, messages in CASES.items() for message in messages
     ]
+    cases.extend([
+        ('unknown', '¿Por qué ronronean los gatos?', {}, 'ronrone'),
+        ('unknown', '¿Cuál es la capital de Japón?', {}, 'Tokio'),
+    ])
+    cases.extend(
+        ('identity', message, {}, 'productos')
+        for message in ('para que sirves jaja', '¿Qué puedes hacer?', 'Oe, ¿cómo me puedes ayudar?')
+    )
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
         rows = [row for row, _ in pool.map(check, cases)]
     row, memory = check(('category', 'Alimento para perro', {}, None))

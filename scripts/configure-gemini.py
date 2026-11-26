@@ -10,21 +10,16 @@ import tempfile
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--env', default='.env')
 parser.add_argument('--model', default='gemini-3.5-flash-lite')
-parser.add_argument('--slot', type=int, choices=(1, 2, 3), default=1,
-                    help='1 = IA principal; 2 y 3 = respaldos si se agota la cuota gratis')
 args = parser.parse_args()
-suffix = '' if args.slot == 1 else f'_{args.slot}'
 path = Path(args.env).resolve()
 if not path.is_file():
     parser.error('Primero crea el archivo .env del proyecto.')
 if not re.fullmatch(r'[a-z0-9.-]+', args.model):
     parser.error('Modelo inválido.')
-key = getpass.getpass(f'Clave API de Gemini para la IA {args.slot} (entrada oculta): ').strip()
+key = getpass.getpass('Clave API de Gemini (entrada oculta): ').strip()
 if len(key) < 20 or not re.fullmatch(r'[A-Za-z0-9_.-]+', key):
     parser.error('La clave no tiene un formato válido.')
-updates = {f'GEMINI_API_KEY{suffix}': key, f'GEMINI_MODEL{suffix}': args.model}
-if args.slot == 1:
-    updates['GEMINI_ENABLED'] = 'true'
+updates = {'GEMINI_ENABLED': 'true', 'GEMINI_API_KEY': key, 'GEMINI_MODEL': args.model}
 lines = [line for line in path.read_text().splitlines() if line.split('=', 1)[0] not in updates]
 lines += [f'{name}={value}' for name, value in updates.items()]
 fd, temporary = tempfile.mkstemp(prefix='.gemini-', dir=path.parent)
@@ -35,4 +30,4 @@ try:
 finally:
     if os.path.exists(temporary):
         os.unlink(temporary)
-print(f'Clave de la IA {args.slot} guardada con permisos privados. Reinicia n8n para activarla.')
+print('Clave guardada con permisos privados. Reinicia n8n para activarla.')

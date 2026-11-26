@@ -1,9 +1,9 @@
 {% set root = path('<front>') %}
 <div class="site-shell">
-  <div class="utility-bar" role="region" aria-label="Contacto y ubicación">
+  <div class="utility-bar" role="region" aria-label="{{ vet_english ? 'Location' : 'Ubicación' }}">
     <div class="container utility-inner">
       <span class="utility-place">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'pin'} only %} {{ business.city }}</span>
-      <a class="utility-phone" href="{{ business.phone_url }}">{{ business.whatsapp }}</a>
+      <span class="utility-tagline">{{ vet_english ? "Paws of the highlands" : "Patitas de altura" }}</span>
     </div>
   </div>
   <header class="site-header">
@@ -12,21 +12,22 @@
         <span class="brand-symbol{% if vet_logo_crop %} brand-symbol-wolf{% endif %}"><img src="{{ vet_logo }}" width="48" height="52" alt="" /></span>
         <span><strong>BALTO<span class="brand-dot">.</span></strong><small>VETERINARIA</small></span>
       </a>
-      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-navigation" aria-label="Abrir menú">
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-navigation" aria-label="{{ vet_english ? 'Open menu' : 'Abrir menú' }}">
         {% include '@vet_theme/templates/icon.html.twig' with {icon: 'menu'} only %}
       </button>
-      <nav id="main-navigation" class="main-navigation" aria-label="Navegación principal">
-        <a href="{{ root }}"{% if is_front %} aria-current="page"{% endif %}>Inicio</a>
-        <a href="{{ root }}#servicios">Servicios</a>
-        <a href="{{ root }}#nosotros">Nosotros</a>
-        <a href="{{ root }}#historias">Historias</a>
-        <a href="{{ root }}#ubicacion">Encuéntranos</a>
-        <a href="{{ path('vet_api.catalog') }}">Tienda</a>
-        <a class="mobile-contact" href="{{ business.appointment_url }}" target="_blank" rel="noopener noreferrer">Separar cita por WhatsApp</a>
+      <nav id="main-navigation" class="main-navigation" aria-label="{{ vet_english ? 'Main navigation' : 'Navegación principal' }}">
+        <a href="{{ root }}"{% if is_front %} aria-current="page"{% endif %}>{{ vet_english ? 'Home' : 'Inicio' }}</a>
+        <a href="{{ root }}#servicios">{{ vet_english ? 'Services' : 'Servicios' }}</a>
+        <a href="{{ root }}#nosotros">{{ vet_english ? 'About us' : 'Nosotros' }}</a>
+        <a href="{{ root }}#historias">{{ vet_english ? 'Stories' : 'Historias' }}</a>
+        <a href="{{ root }}#ubicacion">{{ vet_english ? 'Find us' : 'Encuéntranos' }}</a>
+        <a href="{{ path('vet_api.catalog') }}">{{ vet_english ? 'Shop' : 'Tienda' }}</a>
+        <a class="mobile-contact" href="{{ business.appointment_url }}" target="_blank" rel="noopener noreferrer">{{ vet_english ? 'Book via WhatsApp' : 'Separar cita por WhatsApp' }}</a>
       </nav>
       <div class="header-actions">
-        <a class="cart-link" href="{{ path('commerce_cart.page') }}" aria-label="Ver carrito">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'bag'} only %}<span>Carrito</span>{{ cart_count }}</a>
-        <a class="button button-small header-appointment" href="{{ business.appointment_url }}" target="_blank" rel="noopener noreferrer">Separar cita</a>
+        <a class="account-link" href="{{ path('user.page') }}">{{ vet_english ? 'My account' : 'Mi cuenta' }}</a>
+        <a class="cart-link" href="{{ path('commerce_cart.page') }}" aria-label="{{ vet_english ? 'View cart' : 'Ver carrito' }}">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'bag'} only %}<span>{{ vet_english ? 'Cart' : 'Carrito' }}</span>{{ cart_count }}</a>
+        <a class="button button-small header-appointment" href="{{ business.appointment_url }}" target="_blank" rel="noopener noreferrer">{{ vet_english ? 'Book an appointment' : 'Separar cita' }}</a>
       </div>
     </div>
   </header>
@@ -60,7 +61,7 @@
       <a href="{{ path('vet_api.privacy') }}">Privacidad</a>
       <a href="{{ path('vet_api.purchase_terms') }}">Condiciones de compra</a>
       {% if vet_complaints_book_url %}<a href="{{ vet_complaints_book_url }}">Libro de Reclamaciones</a>{% endif %}
-    </nav><a href="{{ path('user.login') }}">Acceso a mi cuenta</a><a href="{{ path('system.admin') }}">Administración</a></div>
+    </nav></div>
   </footer>
 </div>
 {% if show_action_bar %}

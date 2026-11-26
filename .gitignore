@@ -47,3 +47,6 @@ __pycache__/
 
 # Skills downloaded for local agent sessions.
 /.agents/
+
+# Configuración local de Caddy, incluidos hashes de autenticación.
+/deploy/caddy-sites/*.caddy

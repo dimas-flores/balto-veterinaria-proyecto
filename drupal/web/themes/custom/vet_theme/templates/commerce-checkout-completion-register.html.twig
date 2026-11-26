@@ -1,0 +1,12 @@
+<section class="commerce-checkout-completion-register balto-checkout-register" aria-labelledby="balto-register-title">
+  <div class="commerce-checkout-completion-register__text">
+    <h2 id="balto-register-title">{{ 'Cree su cuenta en BALTO'|t }}</h2>
+    <p>{{ 'Su pedido ya está registrado. Si desea consultar sus compras más adelante, puede crear una cuenta con el correo de este pedido.'|t }}</p>
+  </div>
+  <div class="commerce-checkout-completion-register__form">
+    {% if form.name is defined %}
+      {{ form.name|merge({'#description': 'Elija el nombre con el que iniciará sesión.'|t}) }}
+    {% endif %}
+    {{ form|without('name', 'user_picture') }}
+  </div>
+</section>

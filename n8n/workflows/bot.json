@@ -76,7 +76,7 @@
         300
       ],
       "parameters": {
-        "jsCode": "const msg = $input.first().json.message || {};\nconst text = String(msg.text || '').trim();\nconst m = text.match(/^\\/([a-z_]+)(?:@\\w+)?(?:\\s+(.*))?$/i);\nconst cmd = m ? m[1].toLowerCase() : 'ayuda';\nconst arg = (m && m[2] ? m[2] : '').trim().slice(0, 60);\nreturn [{ json: { cmd, arg } }];"
+        "jsCode": "const text = $input.first().json.message?.text;\nconst input = typeof text === 'string' && text.length <= 160 ? text.trim() : '';\nconst command = input.match(/^\\/([a-z_]+)(?:@\\w+)?(?:[^\\S\\r\\n]+([^\\r\\n]+))?$/i);\nconst stock = input.match(/^stock(?:[^\\S\\r\\n]+([^\\r\\n]+))?$/i);\nconst cmd = command ? command[1].toLowerCase() : stock ? 'stock' : 'ayuda';\nconst arg = (command?.[2] || stock?.[1] || '').trim().slice(0, 60);\nreturn [{ json: { cmd, arg } }];"
       }
     },
     {
@@ -199,7 +199,8 @@
           "id": "baltoDrupalApi",
           "name": "BALTO API interna"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "id": "Leer pedidos",
@@ -228,46 +229,8 @@
           "id": "baltoPedidoSecret",
           "name": "BALTO secreto de pedidos"
         }
-      }
-    },
-    {
-      "id": "Formato stock",
-      "name": "Formato stock",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1300,
-        200
-      ],
-      "parameters": {
-        "jsCode": "const threshold = __STOCK_THRESHOLD__;\nconst esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst arg = $('Interpretar').first().json.arg;\nconst rows = $input.all().flatMap(i => Array.isArray(i.json.data) ? i.json.data : []);\nconst show = p => `• ${esc(p.name)} (${esc(p.sku)}): ${p.stock <= 0 ? '<b>agotado</b>' : p.stock + ' u.'}`;\nlet text;\nif (arg) {\n  text = rows.length ? `📦 <b>Stock de “${esc(arg)}”</b>\\n\\n` + rows.slice(0, 20).map(show).join('\\n') : `No encontré productos con “${esc(arg)}”.`;\n} else {\n  const low = rows.filter(p => Number.isFinite(p.stock) && p.stock <= threshold).sort((a, b) => a.stock - b.stock);\n  text = low.length ? `📦 <b>Stock bajo</b> (umbral ${threshold})\\n\\n` + low.slice(0, 30).map(show).join('\\n') : `✅ Todo en orden: ningún producto con ${threshold} o menos unidades.`;\n}\nreturn [{ json: { text } }];"
-      }
-    },
-    {
-      "id": "Formato pedidos",
-      "name": "Formato pedidos",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1300,
-        400
-      ],
-      "parameters": {
-        "jsCode": "const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst rows = Array.isArray($input.first().json.data) ? $input.first().json.data : [];\nconst text = rows.length ? '🧾 <b>Últimos pedidos</b>\\n\\n' + rows.map(o => `#${esc(o.order_number)} · ${esc(o.placed)}\\n${esc(o.currency)} ${esc(o.total)} · ${o.items} producto(s) · ${esc(o.state)}`).join('\\n\\n') : 'Todavía no hay pedidos.';\nreturn [{ json: { text } }];"
-      }
-    },
-    {
-      "id": "Formato ayuda",
-      "name": "Formato ayuda",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1300,
-        600
-      ],
-      "parameters": {
-        "jsCode": "return [{ json: { text: 'Comandos:\\n/stock — productos con poco stock\\n/stock texto — stock de un producto (nombre o SKU)\\n/pedidos — últimos 5 pedidos' } }];"
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "id": "Responder",
@@ -441,6 +404,104 @@
           "name": "BALTO Telegram"
         }
       }
+    },
+    {
+      "id": "Formatear respuesta",
+      "name": "Formatear respuesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        400
+      ],
+      "parameters": {
+        "jsCode": "// Un solo formateador: el comando elegido decide qué respuesta armar.\nconst cmd = $('Interpretar').first().json.cmd;\nconst formats = {\n  stock: () => {\n    if ($input.all().some(({json}) => json.error || !Array.isArray(json.data))) return [{ json: { text: 'No pude consultar la tienda, intenta en un minuto' } }];\n    const threshold = __STOCK_THRESHOLD__;\n    const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n    const arg = $('Interpretar').first().json.arg;\n    const rows = $input.all().flatMap(i => Array.isArray(i.json.data) ? i.json.data : []);\n    const show = p => `• ${esc(p.name)} (${esc(p.sku)}): ${p.stock <= 0 ? '<b>agotado</b>' : esc(p.stock) + ' u.'}`;\n    let text;\n    if (arg) {\n      text = rows.length ? `📦 <b>Stock de “${esc(arg)}”</b>\\n\\n` + rows.slice(0, 20).map(show).join('\\n') : `No encontré productos con “${esc(arg)}”.`;\n    } else {\n      const low = rows.filter(p => Number.isFinite(p.stock) && p.stock <= threshold).sort((a, b) => a.stock - b.stock);\n      text = low.length ? `📦 <b>Stock bajo</b> (umbral ${threshold})\\n\\n` + low.slice(0, 30).map(show).join('\\n') : `✅ Todo en orden: ningún producto con ${threshold} o menos unidades.`;\n    }\n    return [{ json: { text } }];\n  },\n  pedidos: () => {\n    if ($input.all().some(({json}) => json.error || !Array.isArray(json.data))) return [{ json: { text: 'No pude consultar la tienda, intenta en un minuto' } }];\n    const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n    const rows = Array.isArray($input.first().json.data) ? $input.first().json.data : [];\n    const text = rows.length ? '🧾 <b>Últimos pedidos</b>\\n\\n' + rows.map(o => `#${esc(o.order_number)} · ${esc(o.placed)}\\n${esc(o.currency)} ${esc(o.total)} · ${esc(o.items)} producto(s) · ${esc(o.state)}`).join('\\n\\n') : 'Todavía no hay pedidos.';\n    return [{ json: { text } }];\n  },\n  ayuda: () => {\n    return [{ json: { text: 'Comandos:\\n/stock — productos con poco stock\\n/stock texto — stock de un producto (nombre o SKU)\\n/pedidos — últimos 5 pedidos' } }];\n  },\n};\nreturn (formats[cmd] ?? formats.ayuda)();"
+      }
+    },
+    {
+      "id": "¿Aviso revisado?",
+      "name": "¿Aviso revisado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "check",
+              "leftValue": "={{ ($json.callback_query?.data ?? '') === 'revisada' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Responder revisada",
+      "name": "Responder revisada",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        200
+      ],
+      "parameters": {
+        "resource": "callback",
+        "operation": "answerQuery",
+        "queryId": "={{ $('Mensaje de Telegram').first().json.callback_query.id }}",
+        "additionalFields": {
+          "text": "Marcada como revisada."
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "baltoTelegram",
+          "name": "BALTO Telegram"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "Marcar como revisada",
+      "name": "Marcar como revisada",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        200
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "editMessageText",
+        "messageType": "message",
+        "chatId": "__TELEGRAM_CHAT_ID__",
+        "messageId": "={{ String($('Mensaje de Telegram').first().json.callback_query.message.message_id) }}",
+        "text": "={{ ($('Mensaje de Telegram').first().json.callback_query.message.text ?? '').split('\\n\\n✅ Revisada')[0] + '\\n\\n✅ Revisada' }}",
+        "replyMarkup": "none",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "baltoTelegram",
+          "name": "BALTO Telegram"
+        }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -496,7 +557,7 @@
         ],
         [
           {
-            "node": "Formato ayuda",
+            "node": "Formatear respuesta",
             "type": "main",
             "index": 0
           }
@@ -507,7 +568,7 @@
       "main": [
         [
           {
-            "node": "Formato stock",
+            "node": "Formatear respuesta",
             "type": "main",
             "index": 0
           }
@@ -518,40 +579,7 @@
       "main": [
         [
           {
-            "node": "Formato pedidos",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Formato stock": {
-      "main": [
-        [
-          {
-            "node": "Responder",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Formato pedidos": {
-      "main": [
-        [
-          {
-            "node": "Responder",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Formato ayuda": {
-      "main": [
-        [
-          {
-            "node": "Responder",
+            "node": "Formatear respuesta",
             "type": "main",
             "index": 0
           }
@@ -569,7 +597,7 @@
         ],
         [
           {
-            "node": "Interpretar",
+            "node": "¿Aviso revisado?",
             "type": "main",
             "index": 0
           }
@@ -608,6 +636,46 @@
           }
         ],
         []
+      ]
+    },
+    "Formatear respuesta": {
+      "main": [
+        [
+          {
+            "node": "Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Aviso revisado?": {
+      "main": [
+        [
+          {
+            "node": "Responder revisada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Interpretar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder revisada": {
+      "main": [
+        [
+          {
+            "node": "Marcar como revisada",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   }

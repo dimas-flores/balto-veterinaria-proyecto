@@ -1,10 +1,10 @@
 {# Carrito vacío: en vez de una línea sola, una salida clara a la tienda. #}
 <div class="cart-empty-page">
-  <h2>Tu carrito está vacío</h2>
-  <p>Agrega alimentos, accesorios o productos de cuidado para tu mascota.</p>
+  <h2>{{ vet_english ? "Your cart is empty" : "Tu carrito está vacío" }}</h2>
+  <p>{{ vet_english ? "Add food, accessories or care products for your pet." : "Agrega alimentos, accesorios o productos de cuidado para tu mascota." }}</p>
   <div class="cart-empty-actions">
-    <a class="button" href="{{ path('vet_api.catalog') }}">Ver la tienda</a>
-    <a class="text-link" href="{{ path('vet_api.catalog', {}, {query: {species: 'perro'}}) }}">Para tu perro</a>
-    <a class="text-link" href="{{ path('vet_api.catalog', {}, {query: {species: 'gato'}}) }}">Para tu gato</a>
+    <a class="button" href="{{ path('vet_api.catalog') }}">{{ vet_english ? "Browse the shop" : "Ver la tienda" }}</a>
+    <a class="text-link" href="{{ path('vet_api.catalog', {}, {query: {species: 'perro'}}) }}">{{ vet_english ? "For dogs" : "Para tu perro" }}</a>
+    <a class="text-link" href="{{ path('vet_api.catalog', {}, {query: {species: 'gato'}}) }}">{{ vet_english ? "For cats" : "Para tu gato" }}</a>
   </div>
 </div>

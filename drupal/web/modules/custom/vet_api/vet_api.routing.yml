@@ -96,3 +96,29 @@ vet_api.purchase_terms:
     _title: 'Condiciones de compra'
   requirements:
     _permission: 'access content'
+
+vet_api.appointment_slots:
+  path: '/citas/turnos'
+  defaults:
+    _controller: '\Drupal\vet_api\Controller\AppointmentController::slots'
+  requirements:
+    _access: 'TRUE'
+  methods: [GET]
+
+vet_api.appointment_reserve:
+  path: '/citas/reservar'
+  defaults:
+    _controller: '\Drupal\vet_api\Controller\AppointmentController::reserve'
+  requirements:
+    _access: 'TRUE'
+  methods: [POST]
+
+vet_api.appointment_agenda:
+  path: '/admin/commerce/agenda-balto'
+  defaults:
+    _controller: '\Drupal\vet_api\Controller\AppointmentController::agenda'
+    _title: 'Agenda de BALTO'
+  requirements:
+    _permission: 'administer site configuration'
+  options:
+    _admin_route: TRUE

@@ -35,18 +35,3 @@ docker compose -f docker-compose.yml -f docker-compose.rootless.yml up -d --buil
 **Resultado esperado:** reconstrucción con las dependencias fijadas y servicios operativos en la misma red `backend`. MariaDB sigue sin publicar un puerto y Drupal/n8n se mantienen enlazados a `127.0.0.1`.
 
 No necesitas este archivo opcional en un Docker Engine normal. Para volver a usar el motor predeterminado en tu terminal, ejecuta `unset DOCKER_HOST`.
-
-## Abrir la demo por IP (red del aula)
-
-Con `localhost` la tienda solo funciona en esta computadora: si otra persona entra por la IP, su navegador envía el chat a **su propio** `localhost:5678` y n8n además rechaza el origen. Para trabajar con IP:
-
-```bash
-python3 scripts/configure-local-ip.py          # detecta la IP; o --ip 192.168.1.50
-docker compose up -d --force-recreate drupal n8n
-```
-
-El script cambia solo URL y puertos del `.env`: publica Drupal y n8n en `0.0.0.0`, usa `http://IP:8080` para la tienda y `http://IP:5678/webhook/chat` para el chat, y agrega la IP a `DRUPAL_TRUSTED_HOSTS`. Al arrancar, n8n vuelve a importar `n8n/workflows/chatbot.json` con esa IP en **Recibir chat** (orígenes permitidos), **¿Qué pregunta el cliente?** y **Armar la respuesta**. `CHAT_ALLOWED_ORIGIN` admite varios orígenes separados por coma.
-
-**Resultado esperado:** desde otro equipo de la misma red se abre `http://IP:8080` y el chat responde. Si la IP cambia (otra red Wi‑Fi), repite los dos comandos. Para volver a solo este equipo: `python3 scripts/configure-local-ip.py --localhost`.
-
-El archivo `n8n/workflows/chatbot.json` del repositorio trae la IP pública de EC2 (`http://3.211.103.160`), así que también se puede importar a mano en el n8n de AWS. Para generarlo con otra IP: `BALTO_PUBLIC_ORIGIN=http://IP:8080 python3 scripts/generate-chat-workflow.py`.

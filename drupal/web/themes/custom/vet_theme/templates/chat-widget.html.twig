@@ -1,13 +1,17 @@
 {# El navegador solo conoce la URL pública de n8n; nunca la API key de Drupal. #}
 <aside class="balto-chat" aria-label="Asistente de BALTO">
-  <button type="button" class="chat-launcher" aria-controls="balto-chat-panel" aria-expanded="false"><span aria-hidden="true">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'chat'} only %}</span> <span>Conversemos</span></button>
+  <button type="button" class="chat-launcher" aria-controls="balto-chat-panel" aria-expanded="false"><span aria-hidden="true">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'chat'} only %}</span> <span>{{ vet_english ? "Let’s chat" : "Conversemos" }}</span></button>
   <section id="balto-chat-panel" class="chat-panel" aria-labelledby="chat-title" hidden>
-    <header class="chat-header"><div><strong id="chat-title">Asistente BALTO</strong><small>Productos y orientación de la tienda</small></div><button type="button" class="chat-close" aria-label="Cerrar chat">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'close'} only %}</button></header>
-    <p class="chat-disclaimer">Asistente virtual de BALTO. No reemplaza una consulta veterinaria. No envíes datos personales.</p>
+    <header class="chat-header"><div><strong id="chat-title">{{ vet_english ? "BALTO assistant" : "Asistente BALTO" }}</strong><small>{{ vet_english ? "Product and shop information" : "Productos y orientación de la tienda" }}</small></div><button type="button" class="chat-close" aria-label="Cerrar chat">{% include '@vet_theme/templates/icon.html.twig' with {icon: 'close'} only %}</button></header>
+    <p class="chat-disclaimer">{{ vet_english ? "BALTO’s virtual assistant does not replace a veterinary consultation. Please do not share personal information." : "Asistente virtual de BALTO. No reemplaza una consulta veterinaria. No envíes datos personales." }}</p>
     <div class="chat-history" role="log" aria-live="polite" aria-relevant="additions" aria-label="Mensajes del chat" tabindex="0"></div>
-    <div class="chat-prompts" aria-label="Consultas sugeridas"><button type="button">Precio de Dog Chow</button><button type="button">Servicios</button><button type="button">Horarios</button></div>
-    <p class="chat-typing" role="status" hidden>Escribiendo…</p>
-    <form class="chat-form"><label class="visually-hidden" for="chat-message">Escribe tu consulta</label><input id="chat-message" name="message" type="text" maxlength="500" autocomplete="off" placeholder="Pregunta por un producto…" required /><button type="submit" aria-label="Enviar mensaje">Enviar</button></form>
-    <button type="button" class="chat-clear">Borrar conversación</button>
+    <div class="chat-prompts chat-initial-prompts" aria-label="Acciones rápidas">
+      <button type="button" data-message="Separar cita">{{ vet_english ? "Book an appointment" : "Separar cita" }}</button>
+      <button type="button" data-message="Precios de productos">{{ vet_english ? "See product prices" : "Precios de productos" }}</button>
+      <button type="button" data-message="Dónde atienden">{{ vet_english ? "Find the clinic" : "Dónde atienden" }}</button>
+    </div>
+    <p class="chat-typing" role="status" hidden>{{ vet_english ? "Typing…" : "Escribiendo…" }}</p>
+    <form class="chat-form"><label class="visually-hidden" for="chat-message">{{ vet_english ? "Type your question" : "Escribe tu consulta" }}</label><input id="chat-message" name="message" type="text" maxlength="500" autocomplete="off" placeholder="Pregunta por un producto…" required /><button type="submit" aria-label="Enviar mensaje">{{ vet_english ? "Send" : "Enviar" }}</button></form>
+    <button type="button" class="chat-clear">{{ vet_english ? "Clear conversation" : "Borrar conversación" }}</button>
   </section>
 </aside>

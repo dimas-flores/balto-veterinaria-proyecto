@@ -23,7 +23,7 @@ fetch("http://127.0.0.1:5678/healthz").then(r=>{
 docker compose exec -T n8n node -e '
 fetch("http://127.0.0.1:5678/webhook/chat", {
   method: "POST",
-  headers: {"Content-Type": "application/json", "Origin": process.env.CHAT_ALLOWED_ORIGIN.split(",")[0].trim()},
+  headers: {"Content-Type": "application/json", "Origin": process.env.CHAT_ALLOWED_ORIGIN},
   body: JSON.stringify({message: "hola"}),
   signal: AbortSignal.timeout(30000)
 }).then(async r=>{

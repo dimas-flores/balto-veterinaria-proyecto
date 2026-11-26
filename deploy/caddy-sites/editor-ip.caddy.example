@@ -1,0 +1,9 @@
+https://{$BALTO_EDITOR_IP} {
+	tls internal
+	basic_auth {
+		balto REEMPLAZAR_POR_HASH_BCRYPT_DE_CADDY
+	}
+	reverse_proxy n8n:5678 {
+		header_up -Authorization
+	}
+}

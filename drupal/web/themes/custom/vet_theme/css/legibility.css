@@ -67,8 +67,48 @@
 }
 .chat-links a:hover, .chat-prompts button:hover { background: var(--soft); }
 .chat-prompts { padding: 10px 12px; }
+.chat-initial-prompts[hidden] { display: none; }
 .chat-form input { background: var(--cream); color: var(--green); }
 @media (max-height: 520px) {
   .chat-panel { min-height: 0; }
   .chat-history { min-height: 0; }
 }
+
+@media (max-width: 600px), (max-height: 500px) and (pointer: coarse) {
+  html.balto-chat-open { overflow: hidden; }
+  .balto-chat:has(.chat-panel:not([hidden])) .chat-launcher { visibility: hidden; }
+  body:has(.mobile-action-bar) .balto-chat {
+    bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+  .balto-chat .chat-panel {
+    position: fixed;
+    top: calc(var(--chat-viewport-top, 0px) + max(8px, env(safe-area-inset-top)));
+    right: max(8px, env(safe-area-inset-right));
+    bottom: auto;
+    left: max(8px, env(safe-area-inset-left));
+    width: auto;
+    height: calc(var(--chat-viewport-height, 100dvh) - max(8px, env(safe-area-inset-top)) - max(8px, env(safe-area-inset-bottom)));
+    min-height: 0;
+    border-radius: 14px;
+  }
+  .chat-header { flex-shrink: 0; padding: 8px 12px; }
+  .chat-disclaimer { flex-shrink: 0; padding: 6px 12px; }
+  .chat-history { min-height: 0; padding: 10px 12px; }
+  .chat-form { flex-shrink: 0; padding: 8px 10px; }
+  .chat-form button { min-height: 44px; }
+  .chat-clear { flex-shrink: 0; padding-bottom: 8px; }
+  .chat-initial-prompts { padding: 5px 10px; }
+}
+
+.balto-checkout-register {
+  max-width: 44rem;
+  padding: clamp(16px, 4vw, 28px);
+  margin-block: 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--cream);
+}
+.balto-checkout-register h2 { margin-block: 0 8px; }
+.balto-checkout-register .form-item { margin-block: 14px; }
+.balto-checkout-register input:not([type="submit"]) { width: 100%; max-width: 100%; }
+.balto-checkout-register .description { max-width: 52ch; }

@@ -11,12 +11,16 @@ services:
     ports: !override
       - '${N8N_EDITOR_BIND_ADDRESS:-127.0.0.1}:5678:5678'
     environment:
+      GEMINI_API_KEY_2: ${GEMINI_API_KEY_2:-}
+      GEMINI_MODEL_2: ${GEMINI_MODEL_2:-}
       N8N_PROXY_HOPS: '1'
 
   proxy:
     image: caddy:2.11.9-alpine
     restart: unless-stopped
     environment:
+      BALTO_EDITOR_IP: ${BALTO_EDITOR_IP:-}
+      BALTO_TELEGRAM_SITE_ADDRESS: ${BALTO_TELEGRAM_SITE_ADDRESS:-}
       BALTO_TELEGRAM_WEBHOOK_SECRET: ${BALTO_TELEGRAM_WEBHOOK_SECRET:-}
       BALTO_SITE_ADDRESS: ${BALTO_SITE_ADDRESS:?Configura el host público con configure-aws-env.py}
     ports:
@@ -24,6 +28,7 @@ services:
       - '${AWS_HTTPS_PORT:-443}:443'
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./deploy/caddy-sites:/etc/caddy/sites:ro
       - caddy_data:/data
       - caddy_config:/config
     networks:

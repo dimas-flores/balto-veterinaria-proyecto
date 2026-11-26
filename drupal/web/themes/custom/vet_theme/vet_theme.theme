@@ -5,10 +5,21 @@
  * Variables de presentación. Los contenidos provienen del módulo y MariaDB.
  */
 
+/**
+ * Implements hook_preprocess().
+ */
+function vet_theme_preprocess(array &$variables, string $hook): void {
+  if (in_array($hook, ['vet_home', 'vet_catalog', 'commerce_cart_empty_page'], TRUE)) {
+    $variables['vet_english'] = \Drupal::languageManager()->getCurrentLanguage()->getId() === 'en';
+  }
+}
+
 /** Implements hook_preprocess_page(). */
 function vet_theme_preprocess_page(array &$variables): void {
   $book_url = (string) \Drupal::config('vet_api.business')->get('complaints_book_url');
   $variables['vet_complaints_book_url'] = filter_var($book_url, FILTER_VALIDATE_URL) && parse_url($book_url, PHP_URL_SCHEME) === 'https' ? $book_url : '';
+  $variables['vet_english'] = \Drupal::languageManager()->getCurrentLanguage()->getId() === 'en';
+  $variables['#cache']['contexts'][] = 'languages:language_interface';
   $variables['business'] = \Drupal::service('vet_api.business')->getBusiness();
   $theme_path = \Drupal::service('extension.list.theme')->getPath('vet_theme');
   $variables['vet_assets'] = base_path() . $theme_path;
@@ -53,9 +64,9 @@ function _vet_theme_payment_methods(string $local_methods = ''): array {
   $methods = [
     [
       'icon' => 'bag',
-      'label' => 'Pago en tienda o por Yape',
+      'label' => 'Pedidos web y pagos en tienda',
       // Medios confirmados por el propietario en Datos del negocio.
-      'note' => (trim($local_methods) !== '' ? trim($local_methods) : 'Consulta los medios aceptados en el local') . '. En pedidos web coordinas el pago por WhatsApp antes de confirmar.',
+      'note' => 'En pedidos web, elige pagar al recoger o coordinar por Yape. Medios en el local: ' . (trim($local_methods) !== '' ? trim($local_methods) : 'consulta con BALTO') . '.',
       'available' => TRUE,
     ],
     [
@@ -65,6 +76,11 @@ function _vet_theme_payment_methods(string $local_methods = ''): array {
       'available' => FALSE,
     ],
   ];
+
+  $test_gateway = \Drupal::entityTypeManager()->getStorage('commerce_payment_gateway')->load('mercado_pago_test');
+  if ($test_gateway?->status()) {
+    $methods[0]['note'] .= ' Mercado Pago está disponible en modo de prueba.';
+  }
 
   if (\Drupal::hasService('balto_payments.orders') && \Drupal::hasService('entity_type.manager')) {
     try {
@@ -78,8 +94,8 @@ function _vet_theme_payment_methods(string $local_methods = ''): array {
         }
         if ($gateway->status()) {
           \Drupal::service('balto_payments.orders')->credentials($gateway->getPlugin()->getMode());
-          $methods[2]['available'] = TRUE;
-          $methods[2]['note'] = 'Banca móvil, agentes o internet banking mediante código CIP — vía Culqi.';
+          $methods[1]['available'] = TRUE;
+          $methods[1]['note'] = 'Banca móvil, agentes o internet banking mediante código CIP — vía Culqi.';
         }
         break;
       }

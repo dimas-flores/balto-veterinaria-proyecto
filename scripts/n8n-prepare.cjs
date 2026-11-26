@@ -41,22 +41,19 @@ if (geminiEnabled) {
   const route = name => [{ node: name, type: 'main', index: 0 }];
   const review = route('Revisar qué pide el cliente');
   const retained = new Set();
-  for (const [index, [name, check, value]] of chain.entries()) {
+  for (const [index, [name, , value]] of chain.entries()) {
     retained.add(name);
     node(name).parameters.modelId.value = `models/${value}`;
     const next = chain[index + 1];
-    workflow.connections[name] = {main: [next ? route(check) : review]};
-    if (next) {
-      retained.add(check);
-      workflow.connections[check] = {main: [review, route(next[0])]};
-    }
+    // Salida 0: respuesta de Gemini. Salida 1 (error de cuota o saturación): siguiente clave o reglas.
+    workflow.connections[name] = {main: [review, next ? route(next[0]) : review]};
   }
-  const unused = new Set([primary, ...backups].flatMap(([name, check]) => check ? [name, check] : [name]).filter(name => !retained.has(name)));
+  const unused = new Set([primary, ...backups].map(([name]) => name).filter(name => !retained.has(name)));
   workflow.nodes = workflow.nodes.filter(node => !unused.has(node.name));
   for (const name of unused) delete workflow.connections[name];
 } else {
   const optionalNodes = [
-    '¿Hace falta Gemini?', 'Gemini principal', '¿IA 1 respondió?', 'Gemini de respaldo', '¿IA 2 respondió?', 'Respaldo IA 3',
+    '¿Hace falta Gemini?', 'Gemini principal', 'Gemini de respaldo', 'Respaldo IA 3',
     'Buscar producto inicial',
   ];
   workflow.nodes = workflow.nodes.filter(node => !optionalNodes.includes(node.name));
@@ -83,7 +80,29 @@ if (geminiEnabled) {
     if (widths[node.name]) node.parameters.width = widths[node.name];
   }
 }
-const serialized = JSON.stringify(workflow);
+const draftingNodes = ['¿Redactar con Gemini?', 'Redactar con Gemini', 'Validar redacción principal', 'Devolver respuesta'];
+let omitDrafting = [];
+if (geminiEnabled) {
+  node('Redactar con Gemini', dataWorkflow).parameters.modelId.value = `models/${model}`;
+} else {
+  omitDrafting = draftingNodes;
+  delete dataWorkflow.connections['Asistente BALTO · Preparar respuesta'];
+}
+dataWorkflow.nodes = dataWorkflow.nodes.filter(item => !omitDrafting.includes(item.name));
+for (const name of omitDrafting) delete dataWorkflow.connections[name];
+const alertChat = (process.env.TELEGRAM_CHAT_ID || '').trim();
+const alertsEnabled = !!(process.env.TELEGRAM_BOT_TOKEN || '').trim() && /^-?\d+$/.test(alertChat);
+if (!alertsEnabled) {
+  const alertNodes = ['¿Sin respuesta?', 'Avisar pregunta sin respuesta'];
+  workflow.nodes = workflow.nodes.filter(item => !alertNodes.includes(item.name));
+  for (const name of ['Enviar respuesta', ...alertNodes]) delete workflow.connections[name];
+}
+if (alertsEnabled) workflow.settings.errorWorkflow = 'baltoErroresChat';
+const errorWorkflow = fs.readFileSync('/workflows/chat-errores.json', 'utf8')
+  .replaceAll('__TELEGRAM_CHAT_ID__', alertChat || '0');
+fs.writeFileSync('/tmp/balto-chat-errores.json', errorWorkflow, {mode: 0o600});
+fs.writeFileSync('/tmp/balto-errors-enabled', alertsEnabled ? '1' : '0', {mode: 0o600});
+const serialized = JSON.stringify(workflow).replaceAll('__TELEGRAM_CHAT_ID__', alertChat || '0');
 const serializedData = JSON.stringify(dataWorkflow);
 fs.writeFileSync('/tmp/balto-chat-datos.json', serializedData, { mode: 0o600 });
 fs.writeFileSync('/tmp/balto-chatbot.json', serialized, { mode: 0o600 });
@@ -106,7 +125,7 @@ fs.writeFileSync('/tmp/balto-pedidos.json', orders, { mode: 0o600 });
 fs.writeFileSync('/tmp/balto-bot.json', bot, { mode: 0o600 });
 fs.writeFileSync('/tmp/balto-orders-enabled', ordersEnabled ? '1' : '0', { mode: 0o600 });
 fs.writeFileSync('/tmp/balto-bot-enabled', botEnabled ? '1' : '0', { mode: 0o600 });
-fs.writeFileSync('/tmp/balto-workflow.sha256', crypto.createHash('sha256').update(serialized + serializedData + orders + bot + ordersEnabled + botEnabled + (process.env.WEBHOOK_URL || '')).digest('hex'));
+fs.writeFileSync('/tmp/balto-workflow.sha256', crypto.createHash('sha256').update(serialized + serializedData + errorWorkflow + orders + bot + ordersEnabled + botEnabled + (process.env.WEBHOOK_URL || '')).digest('hex'));
 const key = process.env.VET_API_KEY;
 if (!key || key.length < 32) throw new Error('Falta configurar VET_API_KEY.');
 const credentials = [{ id: 'baltoDrupalApi', name: 'BALTO API interna', type: 'httpHeaderAuth', data: { name: 'X-API-KEY', value: key } }];
